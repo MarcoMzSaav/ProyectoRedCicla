@@ -1,9 +1,13 @@
+import java.util.ArrayList;
+import java.util.Date;    
+
 public class Camion {
-    private String patente;
-    private float capacidadCarga;
+    private final String patente;
+    private final float capacidadCarga;
     private Date ultimaRevision;
     private boolean estado; // true si el camión está disponible, false si está en mantenimiento o no puede ser utilizado
     private boolean alerta;
+    @SuppressWarnings("FieldMayBeFinal")
     private ArrayList<RevTecnica> registroRevisiones;
 
     public Camion(String patente, float capacidadCarga) {
@@ -49,5 +53,9 @@ public class Camion {
 
     public ArrayList<RevTecnica> getRegistroRevisiones() {
         return registroRevisiones;
+    }
+
+    public Date getUltimaRevision() {
+        return ultimaRevision;
     }
 }

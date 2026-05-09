@@ -15,19 +15,40 @@ public abstract class Empleado {
         this.claveAcceso = claveAcceso;
     }
 
+
+
     public String getNombreCompleto() {
         return nombrecompleto;
+    }
+    public void setNombreCompleto(String nombrecompleto) {
+        this.nombrecompleto = nombrecompleto;
     }
 
     public String getRut() {
         return rut;
     }
+    public void setRut(String rut) {
+        this.rut = rut;
+    }
 
     public String getCorreoElectronico() {
         return correo;
     }
+    public void setCorreoElectronico(String correo) {
+        this.correo = correo;
+    }
 
     public String getNumeroTelefono() {
         return telefono;
+    }
+    public void setNumeroTelefono(String telefono) {
+        this.telefono = telefono;
+    }
+
+    public String getClaveAcceso() {
+        return claveAcceso;
+    }
+    public void setClaveAcceso(String claveAcceso) {
+        this.claveAcceso = claveAcceso;
     }
 }

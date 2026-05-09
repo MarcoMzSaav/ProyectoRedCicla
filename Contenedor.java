@@ -1,10 +1,13 @@
+import java.util.ArrayList;
+
 public class Contenedor {
-    private float capacidad;
+    private final float capacidad;
     private boolean estado;
-    private ArrayList<Integer> historial;
+    @SuppressWarnings("FieldMayBeFinal")
+    private ArrayList<Float> historial;
 
 
-    private Contenedor(float capacidad) {
+    public Contenedor(float capacidad) {
         this.capacidad = capacidad;
         this.estado = true; // true cuando esta disponible, false cuando tiene algun problema o requiere revision
         this.historial = new ArrayList<>();
@@ -14,10 +17,10 @@ public class Contenedor {
         if (historial.size() >= 10) {
             historial.remove(0); // Elimina el registro más antiguo si se supera el límite de 10
         }
-        historial.add((float) registro);
+        historial.add(registro);
     }
 
-    public ArrayList<Integer> getHistorial() {
+    public ArrayList<Float> getHistorial() {
         return historial;
     }
 

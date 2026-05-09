@@ -2,10 +2,10 @@ import java.util.Date;
 
 public class RevTecnica {
 
-    private Date fechaRevision;
-    private boolean aprobada;
-    private String observaciones;
-    private Date fechaVencimiento;
+    private final Date fechaRevision;
+    private final boolean aprobada;
+    private final String observaciones;
+    private final Date fechaVencimiento;
 
     public RevTecnica(Date fechaRevision, boolean aprobada, String observaciones, Date fechaVencimiento) {
         this.fechaRevision = fechaRevision;

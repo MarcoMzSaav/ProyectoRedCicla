@@ -7,4 +7,11 @@ public class Administrativo extends Empleado {
         this.area = area;
     }
 
+    public String getArea() {
+        return area;
+    }
+    public void setArea(String area) {
+        this.area = area;
+    }
+
 }

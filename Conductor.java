@@ -9,5 +9,8 @@ public class Conductor extends Empleado {
     public String getLicenciaConducir() {
         return licenciaConducir;
     }
+    public void setLicenciaConducir(String licenciaConducir) {
+        this.licenciaConducir = licenciaConducir;
+    }
 
 }

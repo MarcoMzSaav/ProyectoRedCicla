@@ -6,6 +6,9 @@ public class Ayudante extends Empleado {
         this.licenciaConducir = licenciaConducir;
     }
 
+    public void setLicenciaConducir(String licenciaConducir) {
+        this.licenciaConducir = licenciaConducir;
+    }
     public String getLicenciaConducir() {
         return licenciaConducir;
     }
