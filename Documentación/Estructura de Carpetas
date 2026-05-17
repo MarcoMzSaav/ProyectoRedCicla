@@ -1,0 +1,35 @@
+Estructura de carpetas para la app movil:
+
+app_movil/
+├── src/main/java/com/redcicla/app/
+│   ├── models/           # (Tus clases actuales van aquí)
+│   │   ├── Empleado.java
+│   │   ├── Camion.java
+│   │   └── PuntoReciclaje.java
+│   ├── ui/               # (La Interfaz Gráfica)
+│   │   ├── activities/   # Pantallas completas (ej: LoginActivity.java)
+│   │   └── adapters/     # Listas visuales (ej: ListaRutasAdapter.java)
+│   ├── database/         # (El corazón offline del sistema)
+│   │   ├── AppDatabase.java # Configuración de SQLite/Room
+│   │   └── daos/         # Consultas SQL locales
+│   └── network/          # (Para cuando sí haya internet)
+│       └── ApiSync.java  # Código para enviar datos a Talca
+└── src/main/res/
+    ├── layout/           # (Tus archivos XML de diseño visual)
+    │   └── activity_main.xml
+    └── values/           # (Colores, textos y estilos)
+
+Estructura de carpetas para la web:
+
+backend_web/
+├── redcicla_core/        # Configuraciones principales del servidor
+│   ├── settings.py       # Conexión a PostgreSQL
+│   └── urls.py           # Rutas web generales
+├── apps/                 # Módulos del sistema separados
+│   ├── usuarios/         # Lógica de roles (Admin, Conductor)
+│   ├── flota/            # Gestión de camiones y mantenciones
+│   └── logistica/        # Puntos de reciclaje y rutas
+├── templates/            # (Tus archivos de interfaz web)
+│   └── panel_admin.html  # El HTML con Bootstrap que te envié
+├── static/               # Imágenes, CSS propio y logos
+└── manage.py             # Archivo ejecutable de Django
