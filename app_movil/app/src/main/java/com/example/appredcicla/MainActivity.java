@@ -1,5 +1,6 @@
 package com.example.appredcicla;
 
+import android.content.Intent; // 🚀 Importación necesaria para cambiar de pantalla
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -34,6 +35,10 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(MainActivity.this, "Por favor, completa los campos", Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(MainActivity.this, "Ingresando a RedCicla...", Toast.LENGTH_SHORT).show();
+
+                    // 🚀 Código para saltar de la pantalla de Login a la de Registro de Retiro
+                    Intent intento = new Intent(MainActivity.this, RegistrarRetiroActivity.class);
+                    startActivity(intento);
                 }
             }
         });

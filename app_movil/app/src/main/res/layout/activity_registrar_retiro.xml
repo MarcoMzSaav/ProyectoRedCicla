@@ -1,10 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".RegistrarRetiroActivity">
+    android:orientation="vertical"
+    android:padding="24dp">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Registro de Retiro (Talca)"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="24dp"
+        android:textColor="#2E7D32"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="ID Punto de Reciclaje:"
+        android:textStyle="bold"
+        android:layout_marginBottom="4dp"/>
+
+    <EditText
+        android:id="@+id/inputPuntoId"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:hint="Ej: 105"
+        android:inputType="number"
+        android:layout_marginBottom="16dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Kilogramos de Vidrio (Visor Pluma):"
+        android:textStyle="bold"
+        android:layout_marginBottom="4dp"/>
+
+    <EditText
+        android:id="@+id/inputKgVidrio"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:hint="Ej: 340.5"
+        android:inputType="numberDecimal"
+        android:layout_marginBottom="24dp"/>
+
+    <Button
+        android:id="@+id/btnGuardarRetiro"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:text="Guardar Retiro Offline"
+        android:backgroundTint="#2E7D32"
+        android:textSize="16sp"
+        android:layout_marginBottom="16dp"/>
+
+</LinearLayout>
