@@ -33,3 +33,31 @@ Java y Android Studio son sumamente estrictos. Si creas o modificas un archivo y
 Si creas una clase nueva o arrastras un archivo dentro de la carpeta `models`, su primerísima línea de código **tiene que ser exactamente esta**:
 ```java
 package com.example.appredcicla.models;
+Si el archivo está suelto en la raíz de java, debe decir package com.example.appredcicla;. Si no coincide la carpeta con la declaración, el compilador abortará todo.
+
+B. El fantasma de la "R" roja (Cannot resolve symbol R)
+A veces, al pegar código de afuera o cambiar de pantalla, la letra R (que conecta Java con el XML) se vuelve roja. No entres en pánico, se soluciona de dos formas:
+
+Escribe manualmente en los imports de arriba: import com.example.appredcicla.R;
+
+Si no funciona, busca en la barra de herramientas superior el icono de un elefante pequeño con una flecha azul (Sync Project with Gradle Files). Hazle clic para que el programa regenere el mapa de IDs.
+
+C. Coincidencia de nombres
+Recuerda que en Java, el nombre de la clase pública debe ser idéntico al nombre del archivo físico (ejemplo: public class RutaActiva solo puede vivir dentro de un archivo llamado RutaActiva.java). Ojo con las mayúsculas y minúsculas.
+
+📲 4. Cómo probar la aplicación
+Si le das al botón de "Play" (Run) y te arroja el error No target device found, es porque necesitas asignarle un teléfono para correr la app. Tienes dos opciones:
+
+Teléfono Virtual (Emulador): Ve a Tools > Device Manager, haz clic en Create Device, elige un modelo (ej. Pixel 7), descarga una versión de sistema estable (como API 33 o 34) y enciéndelo.
+
+Tu propio celular (Más rápido si tu PC va lento): Activa las Opciones de Desarrollador en tu Android físico presionando 7 veces el "Número de Compilación", enciende la Depuración por USB y conéctalo al PC con cable de carga. Android Studio lo detectará al instante.
+
+🛠️ 5. Antes de hacer Commit y Push
+No toques el archivo .gitignore: El cascarón ya viene configurado para ignorar las carpetas pesadas de compilación local (build/, .gradle/). Nunca fuerces la subida de esas carpetas o romperás los entornos de tus compañeros.
+
+Asegúrate de que la pestaña Build abajo en la consola termine en verde antes de subir tus cambios al repositorio principal.
+
+
+***
+
+Con este manual guardado en la carpeta, tus compañeros sabrán moverse por la interfaz, sabrán q
