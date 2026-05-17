@@ -1,0 +1,63 @@
+# 📱 RedCicla - Módulo de Aplicación Móvil (Android)
+
+¡Hola equipo! Este es el esqueleto inicial de la aplicación móvil de **RedCicla** desarrollada en **Java nativo**. Actualmente cuenta con la interfaz interactiva de inicio de sesión compilando y funcionando al 100%.
+
+Para asegurar que nadie rompa el proyecto y todos podamos meter mano de forma ordenada, por favor lean y sigan este manual antes de modificar cualquier archivo.
+
+---
+
+## 🚀 1. Cómo abrir el proyecto correctamente
+
+1. Asegúrate de tener instalado **Android Studio** (versión actualizada).
+2. Abre Android Studio, selecciona **Open** (Abrir) y busca la carpeta exacta llamada `app_movil/` dentro de nuestro repositorio clonado.
+3. **🚨 REGLA DE ORO OPERATIVA:** Una vez abierto el proyecto, ve al panel izquierdo de carpetas. Arriba del todo verás un menú desplegable que por defecto dice *Project Files*. **Cámbialo obligatoriamente a la vista "Android"**. Esto ordenará el árbol de archivos de forma limpia.
+
+---
+
+## 📂 2. Estructura del código (¿Dónde meter mano?)
+
+El proyecto está ordenado bajo la arquitectura oficial de Android. No edites archivos de configuración de Gradle a menos que sea necesario. Concéntrate en estas rutas:
+
+* **El Diseño Visual (XML):** Viviendo en `app > res > layout > activity_main.xml`.
+    * *Nota de interfaz:* Google quitó los botones que decían "Code", "Split" y "Design". Ahora son tres pequeños iconos abstractos en la **esquina superior derecha**. El primero (`< >`) muestra el código limpio, el del medio divide la pantalla, y el tercero muestra solo el lienzo.
+* **La Lógica de Control (Java):** Viviendo en `app > java > com.example.appredcicla > MainActivity.java`. Aquí es donde vinculamos los botones del XML y les damos vida (validaciones, alertas flotantes `Toast`, etc.).
+* **Los Modelos del Negocio (Clases):** Viviendo en `app > java > com.example.appredcicla > models`. Aquí dentro están clases como `Camion.java`, `RutaActiva.java`, `Empleado.java`, etc.
+
+---
+
+## ⚠️ 3. Leyes de la Física de este proyecto (Evitemos líneas rojas)
+
+Java y Android Studio son sumamente estrictos. Si creas o modificas un archivo y se llena de errores en rojo, revisa estos tres fallos típicos que ya solucionamos:
+
+### A. La regla del `package` (Primera línea de código)
+Si creas una clase nueva o arrastras un archivo dentro de la carpeta `models`, su primerísima línea de código **tiene que ser exactamente esta**:
+```java
+package com.example.appredcicla.models;
+Si el archivo está suelto en la raíz de java, debe decir package com.example.appredcicla;. Si no coincide la carpeta con la declaración, el compilador abortará todo.
+
+B. El fantasma de la "R" roja (Cannot resolve symbol R)
+A veces, al pegar código de afuera o cambiar de pantalla, la letra R (que conecta Java con el XML) se vuelve roja. No entres en pánico, se soluciona de dos formas:
+
+Escribe manualmente en los imports de arriba: import com.example.appredcicla.R;
+
+Si no funciona, busca en la barra de herramientas superior el icono de un elefante pequeño con una flecha azul (Sync Project with Gradle Files). Hazle clic para que el programa regenere el mapa de IDs.
+
+C. Coincidencia de nombres
+Recuerda que en Java, el nombre de la clase pública debe ser idéntico al nombre del archivo físico (ejemplo: public class RutaActiva solo puede vivir dentro de un archivo llamado RutaActiva.java). Ojo con las mayúsculas y minúsculas.
+
+📲 4. Cómo probar la aplicación
+Si le das al botón de "Play" (Run) y te arroja el error No target device found, es porque necesitas asignarle un teléfono para correr la app. Tienes dos opciones:
+
+Teléfono Virtual (Emulador): Ve a Tools > Device Manager, haz clic en Create Device, elige un modelo (ej. Pixel 7), descarga una versión de sistema estable (como API 33 o 34) y enciéndelo.
+
+Tu propio celular (Más rápido si tu PC va lento): Activa las Opciones de Desarrollador en tu Android físico presionando 7 veces el "Número de Compilación", enciende la Depuración por USB y conéctalo al PC con cable de carga. Android Studio lo detectará al instante.
+
+🛠️ 5. Antes de hacer Commit y Push
+No toques el archivo .gitignore: El cascarón ya viene configurado para ignorar las carpetas pesadas de compilación local (build/, .gradle/). Nunca fuerces la subida de esas carpetas o romperás los entornos de tus compañeros.
+
+Asegúrate de que la pestaña Build abajo en la consola termine en verde antes de subir tus cambios al repositorio principal.
+
+
+***
+
+Con este manual guardado en la carpeta, tus compañeros sabrán moverse por la interfaz, sabrán q
