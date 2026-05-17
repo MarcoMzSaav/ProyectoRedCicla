@@ -1,6 +1,7 @@
+package com.example.appredcicla.models;
 import java.util.Date;
 
-public class RevTecnica {
+public class RevTecnica{
 
     private final Date fechaRevision;
     private final boolean aprobada;
