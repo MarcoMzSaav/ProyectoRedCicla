@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm p-3 border-start border-4 border-success">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted text-uppercase small">Vidrio Mensual Recolectado</h6>
+                    <h3 class="fw-bold text-dark mb-0">14,250 kg</h3>
+                </div>
+                <div class="bg-success-subtle p-3 rounded-circle text-success fs-3">
+                    <i class="bi bi-boxes"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm p-3 border-start border-4 border-info">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted text-uppercase small">Impacto Ambiental Neto</h6>
+                    <h3 class="fw-bold text-dark mb-0">-3.4 tn CO2e</h3>
+                </div>
+                <div class="bg-info-subtle p-3 rounded-circle text-info fs-3">
+                    <i class="bi bi-tree"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm p-3 border-start border-4 border-danger">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted text-uppercase small">Camiones con Alerta</h6>
+                    <h3 class="fw-bold text-dark mb-0">1</h3>
+                </div>
+                <div class="bg-danger-subtle p-3 rounded-circle text-danger fs-3">
+                    <i class="bi bi-exclamation-triangle"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 text-secondary fw-bold">Últimos Retiros Sincronizados (Terreno Rural)</h5>
+        <span class="badge bg-warning text-dark"><i class="bi bi-arrow-repeat"></i> 2 pendientes por validar en pesaje final</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>ID Punto</th>
+                    <th>Comuna</th>
+                    <th>Fecha Retiro</th>
+                    <th>Pesaje App (Conductor)</th>
+                    <th>Pesaje Balanza (Acopio)</th>
+                    <th>Diferencia</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in retiros %}
+                <tr>
+                    <td><span class="fw-bold">#{{ r[0] }}</span></td>
+                    <td>{{ r[1] }}</td>
+                    <td>{{ r[2] }}</td>
+                    <td>{{ r[3] }} kg</td>
+                    <td>{{ r[4] }} kg</td>
+                    <td>
+                        {% if r[4] == 0 %}
+                            Pendiente Acopio
+                        {% else %}
+                            {{ (r[4] - r[3]) | round(2) }} kg
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if r[5] == 'Validado' %}
+                            <span class="badge bg-success">Validado</span>
+                        {% else %}
+                            <span class="badge bg-danger">Auditoría</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
