@@ -1,6 +1,16 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<div class="mb-4 p-3 bg-white rounded shadow-sm d-flex justify-content-between align-items-center border border-warning">
+    <div>
+        <h6 class="mb-1 text-warning fw-bold"><i class="bi bi-cpu"></i> Entorno de Pruebas Integradas</h6>
+        <p class="mb-0 text-muted small">Simula la llegada de un camión al acopio enviando pesajes offline mediante JSON.</p>
+    </div>
+    <button onclick="simularEnvioCelular()" class="btn btn-warning fw-bold">
+        <i class="bi bi-phone-vibrate"></i> Simular Sincronización Móvil
+    </button>
+</div>
+
 <div class="row g-3 mb-4">
     <div class="col-md-4">
         <div class="card border-0 shadow-sm p-3 border-start border-4 border-success">
@@ -89,4 +99,32 @@
         </table>
     </div>
 </div>
+
+<script>
+function simularEnvioCelular() {
+    const datosMockCelular = [
+        { punto_reciclaje_id: 101, cantidad_conductor: 312.5, fecha_hora: "21-05-2026 14:20" },
+        { punto_reciclaje_id: 105, cantidad_conductor: 580.2, fecha_hora: "21-05-2026 16:45" }
+    ];
+
+    fetch('/api/sincronizar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(datosMockCelular)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(data.status === "success") {
+            alert("📱 ¡Simulación Exitosa! El servidor Python recibió el JSON del celular.\nLa tabla se actualizará.");
+            // Le damos medio segundo para cerrar hilos antes de recargar
+            setTimeout(() => {
+                location.reload();
+            }, 500);
+        } else {
+            alert("Error en la API: " + data.message);
+        }
+    })
+    .catch(error => alert("Error de red: " + error));
+}
+</script>
 {% endblock %}
