@@ -30,4 +30,5 @@ public class RevTecnica{
     public Date getFechaVencimiento() {
         return fechaVencimiento;
     }
+    
 }
