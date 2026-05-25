@@ -24,8 +24,6 @@ router.post('/login', async (req, res) => {
   res.json(user);
 });
 
-module.exports = router;
-
 // OBTENER RUTA ACTIVA
 router.get('/ruta-activa/:empleadoId', async (req, res) => {
   const empleadoId = req.params.empleadoId;
@@ -87,3 +85,5 @@ router.post('/retiro', async (req, res) => {
 
   res.json({ ok: true });
 });
+
+module.exports = router;
