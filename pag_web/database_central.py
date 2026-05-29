@@ -1,17 +1,23 @@
+import os
 import sqlite3
 
+# Blindaje de ruta absoluta FISO
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, 'redcicla_central.db')
+
 def inicializar_bd_central():
-    conexion = sqlite3.connect('redcicla_central.db')
+    conexion = sqlite3.connect(DB_PATH) # <-- Blindado
     cursor = conexion.cursor()
     
-    # 1. Creamos las tablas de forma secuencial e independiente
+    # 1. CREACIÓN DE TABLAS
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS usuarios (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nombre TEXT,
             correo TEXT UNIQUE NOT NULL,
             clave TEXT NOT NULL,
-            rol TEXT NOT NULL
+            rol TEXT NOT NULL,
+            estado INTEGER DEFAULT 1
         )
     ''')
     
@@ -35,15 +41,16 @@ def inicializar_bd_central():
             FOREIGN KEY(punto_reciclaje_id) REFERENCES puntos_reciclaje(id)
         )
     ''')
-    
-    # Aseguramos que las tablas existan físicamente guardando los cambios primero
     conexion.commit()
     
-    # 2. Inyecciones de prueba protegidas con un bloque Try/Except
+    # 2. INYECCIÓN DE DATOS
     try:
         cursor.execute("INSERT OR IGNORE INTO puntos_reciclaje VALUES (101, 'Talca Centro', '1 Oriente 4 Norte', 500.0)")
         cursor.execute("INSERT OR IGNORE INTO puntos_reciclaje VALUES (105, 'San Clemente', 'Huamachuco 230', 800.0)")
-        cursor.execute("INSERT OR IGNORE INTO usuarios (correo, clave, rol) VALUES ('admin@redcicla.cl', 'admin123', 'Administrador')")
+        
+        cursor.execute("INSERT OR IGNORE INTO usuarios (nombre, correo, clave, rol, estado) VALUES ('Jefe General', 'jefe@redcicla.cl', 'jefe123', 'Jefe', 1)")
+        cursor.execute("INSERT OR IGNORE INTO usuarios (nombre, correo, clave, rol, estado) VALUES ('Admin Talca', 'admin@redcicla.cl', 'admin123', 'Administrador', 1)")
+        cursor.execute("INSERT OR IGNORE INTO usuarios (nombre, correo, clave, rol, estado) VALUES ('Conductor Despedido', 'juan@redcicla.cl', 'juan123', 'Conductor', 0)")
         conexion.commit()
     except sqlite3.OperationalError as e:
         print(f"⚠️ Nota de inicialización: {e}")

@@ -31,6 +31,10 @@
                     <li><a href="#" class="nav-link p-3 rounded"><i class="bi bi-truck"></i> Gestión de Flota</a></li>
                     <li><a href="#" class="nav-link p-3 rounded"><i class="bi bi-geo-alt"></i> Puntos Limpios (Talca)</a></li>
                     <li><a href="#" class="nav-link p-3 rounded"><i class="bi bi-bar-chart-line"></i> Reporte CO2</a></li>
+                    
+                    {% if session.get('usuario_rol') == 'Jefe' or session.get('usuario_rol') == 'Administrador' %}
+                        <li><a href="#" class="nav-link p-3 rounded text-warning"><i class="bi bi-people"></i> Gestionar Personal</a></li>
+                    {% endif %}
                 </ul>
                 <hr class="text-secondary">
                 <div class="text-muted small text-center">Módulo FISO - UTALCA</div>
@@ -40,9 +44,12 @@
                 <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
                     <h2 class="h4 text-secondary">Región del Maule</h2>
                     <div class="dropdown">
-                        <button class="btn btn-outline-secondary dropdown-toggle" type="button">
-                            <i class="bi bi-person-circle"></i> Administrador Central
+                        <button class="btn btn-outline-secondary dropdown-toggle fw-bold" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle"></i> {{ session.get('usuario_nombre') }} ({{ session.get('usuario_rol') }})
                         </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item text-danger" href="/logout"><i class="bi bi-box-arrow-right"></i> Cerrar Sesión</a></li>
+                        </ul>
                     </div>
                 </div>
 
