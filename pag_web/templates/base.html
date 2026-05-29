@@ -33,7 +33,7 @@
                     <li><a href="#" class="nav-link p-3 rounded"><i class="bi bi-bar-chart-line"></i> Reporte CO2</a></li>
                     
                     {% if session.get('usuario_rol') == 'Jefe' or session.get('usuario_rol') == 'Administrador' %}
-                        <li><a href="#" class="nav-link p-3 rounded text-warning"><i class="bi bi-people"></i> Gestionar Personal</a></li>
+                        <li><a href="/usuarios" class="nav-link p-3 rounded text-warning"><i class="bi bi-people"></i> Gestionar Personal</a></li>
                     {% endif %}
                 </ul>
                 <hr class="text-secondary">

@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-success text-white fw-bold">
+                <i class="bi bi-person-plus"></i> Registrar Nuevo Usuario
+            </div>
+            <div class="card-body bg-white">
+                <form action="/usuarios/crear" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label small text-muted fw-bold">Nombre Completo</label>
+                        <input type="text" name="nombre" class="form-control" required placeholder="Ej. Juan Pérez">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small text-muted fw-bold">Correo (Usuario)</label>
+                        <input type="email" name="correo" class="form-control" required placeholder="juan@redcicla.cl">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small text-muted fw-bold">Contraseña</label>
+                        <input type="text" name="clave" class="form-control" required placeholder="Contraseña inicial">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small text-muted fw-bold">RUT Trabajador</label>
+                        <input type="text" name="rut" class="form-control" required placeholder="Ej. 12.345.678-9">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small text-muted fw-bold">Teléfono Celular</label>
+                        <input type="text" name="telefono" class="form-control" required placeholder="+569...">
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label small text-muted fw-bold">Rol Operativo</label>
+                        <select name="rol" class="form-select" required>
+                            <option value="Conductor">Conductor</option>
+                            <option value="Ayudante">Ayudante</option>
+                            <option value="Administrador">Administrador</option>
+                            </select>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100 fw-bold">Guardar Usuario</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white fw-bold text-secondary">
+                <i class="bi bi-card-list"></i> Personal Registrado
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Correo</th>
+                            <th>Rol</th>
+                            <th>Estado</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in usuarios %}
+                        <tr>
+                            <td class="fw-bold">{{ u[1] }}</td>
+                            <td>{{ u[2] }}</td>
+                            <td>
+                                {% if u[3] == 'Jefe' %} <span class="badge bg-dark">Jefe</span>
+                                {% elif u[3] == 'Administrador' %} <span class="badge bg-primary">Admin</span>
+                                {% else %} <span class="badge bg-secondary">{{ u[3] }}</span> {% endif %}
+                            </td>
+                            <td>
+                                {% if u[4] == 1 %}
+                                    <span class="badge bg-success">Activo</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Bloqueado</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if u[3] != 'Jefe' %}
+                                    <form action="/usuarios/estado/{{ u[0] }}" method="POST" style="display:inline;">
+                                        {% if u[4] == 1 %}
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Desactivar">Desactivar</button>
+                                        {% else %}
+                                            <button type="submit" class="btn btn-sm btn-outline-success" title="Activar">Reactivar</button>
+                                        {% endif %}
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
