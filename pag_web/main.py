@@ -1,6 +1,7 @@
 import os
 import sqlite3
 import webbrowser
+from datetime import datetime
 from threading import Timer
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from database_central import inicializar_bd_central
@@ -162,6 +163,36 @@ def gestion_flota():
 
     conexion = sqlite3.connect(DB_PATH)
     cursor = conexion.cursor()
+    
+    # --- CEREBRO AUTOMÁTICO DE ALERTAS (HU-13) ---
+    # 1. Traemos las fechas de revisión de todos los camiones
+    cursor.execute("SELECT id, ultima_revision FROM camiones")
+    camiones_revision = cursor.fetchall()
+    
+    hoy = datetime.now()
+    
+    for camion in camiones_revision:
+        id_camion = camion[0]
+        fecha_rev_str = camion[1]
+        
+        try:
+            # Convertimos el texto de la base de datos a una Fecha real de Python
+            fecha_rev = datetime.strptime(fecha_rev_str, "%Y-%m-%d")
+            # Calculamos cuántos días han pasado
+            dias_pasados = (hoy - fecha_rev).days
+            
+            # Si pasaron más de 365 días (1 año), se prende la alerta (1), si no, se apaga (0)
+            nueva_alerta = 1 if dias_pasados >= 365 else 0
+            
+            # Actualizamos silenciosamente el camión en la base de datos
+            cursor.execute("UPDATE camiones SET alerta = ? WHERE id = ?", (nueva_alerta, id_camion))
+        except Exception as e:
+            pass # Por si un camión tiene la fecha en blanco o mal escrita
+            
+    conexion.commit()
+    # --------------------------------------------
+
+    # 2. Ahora sí, le mandamos los camiones actualizados a la página web
     cursor.execute("SELECT id, patente, capacidad_carga, ultima_revision, estado, alerta FROM camiones ORDER BY patente")
     lista_camiones = cursor.fetchall()
     conexion.close()

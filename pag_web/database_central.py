@@ -12,7 +12,7 @@ def inicializar_bd_central():
     cursor.execute('CREATE TABLE IF NOT EXISTS zonas (id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT NOT NULL)')
     cursor.execute('CREATE TABLE IF NOT EXISTS rutas (id INTEGER PRIMARY KEY AUTOINCREMENT, zona_id INTEGER, nombre TEXT NOT NULL, FOREIGN KEY(zona_id) REFERENCES zonas(id))')
 
-    # 2. EMPLEADOS (Antes Usuarios - Mantenemos el estado para el Borrado Lógico)
+    # 2. EMPLEADOS (Antes Usuarios)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS empleados (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -27,7 +27,7 @@ def inicializar_bd_central():
         )
     ''')
 
-    # 3. CAMIONES Y REVISIONES
+    # 3. CAMIONES Y REVISIONES (¡Aquí está la tabla que faltaba!)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS camiones (
             id INTEGER PRIMARY KEY AUTOINCREMENT, patente TEXT UNIQUE NOT NULL, capacidad_carga REAL,
@@ -61,7 +61,7 @@ def inicializar_bd_central():
         )
     ''')
 
-    # 5. REGISTROS DE RETIRO (Añadimos 'estado' para que la tabla del dashboard funcione)
+    # 5. REGISTROS DE RETIRO
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS registros_retiro (
             id INTEGER PRIMARY KEY AUTOINCREMENT, ruta_activa_id INTEGER, punto_id INTEGER,
@@ -73,28 +73,21 @@ def inicializar_bd_central():
 
     conexion.commit()
 
-
-    # --- INYECCIÓN DE DATOS MOCK (SEPARADOS PARA MAYOR SEGURIDAD) ---
-    
-    # Intento 1: Inyectar Puntos de Reciclaje
+    # --- INYECCIÓN DE DATOS MOCK ---
     try:
         cursor.execute("INSERT OR IGNORE INTO puntos_reciclaje (id, direccion, estado) VALUES (101, '1 Oriente 4 Norte, Talca', 1)")
         cursor.execute("INSERT OR IGNORE INTO puntos_reciclaje (id, direccion, estado) VALUES (105, 'Huamachuco 230, San Clemente', 1)")
         conexion.commit()
     except sqlite3.OperationalError as e:
-        print(f"⚠️ Error al inyectar puntos: {e}")
+        print(f"⚠️ Error en puntos: {e}")
 
-    # Intento 2: Inyectar Empleados
     try:
         cursor.execute("INSERT OR IGNORE INTO empleados (rut, nombre_completo, correo, telefono, clave_acceso, rol, licencia_conducir, estado) VALUES ('11.111.111-1', 'Jefe General', 'jefe@redcicla.cl', '+56911111111', 'jefe123', 'Jefe', 'N/A', 1)")
         cursor.execute("INSERT OR IGNORE INTO empleados (rut, nombre_completo, correo, telefono, clave_acceso, rol, licencia_conducir, estado) VALUES ('22.222.222-2', 'Admin Talca', 'admin@redcicla.cl', '+56922222222', 'admin123', 'Administrador', 'N/A', 1)")
         cursor.execute("INSERT OR IGNORE INTO empleados (rut, nombre_completo, correo, telefono, clave_acceso, rol, licencia_conducir, estado) VALUES ('33.333.333-3', 'Conductor Despedido', 'juan@redcicla.cl', '+56933333333', 'juan123', 'Conductor', 'A4', 0)")
         conexion.commit()
     except sqlite3.OperationalError as e:
-        print(f"⚠️ Error al inyectar empleados: {e}")
-        
-    conexion.close()
-    print("📋 MEGA Base de datos RedCicla armada e integrada con éxito.")
+        print(f"⚠️ Error en empleados: {e}")
         
     conexion.close()
     print("📋 MEGA Base de datos RedCicla armada e integrada con éxito.")
