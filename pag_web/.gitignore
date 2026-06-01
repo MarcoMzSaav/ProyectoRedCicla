@@ -1,0 +1,6 @@
+# Ignorar base de datos SQLite
+*.db
+redcicla_central.db
+
+# Ignorar caché de Python
+__pycache__/
