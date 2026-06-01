@@ -160,6 +160,28 @@ def sincronizar_datos():
         if conexion:
             conexion.close()
 
+# ==========================================
+# 6. PÁGINAS EN CONSTRUCCIÓN (Navegación)
+# ==========================================
+
+@app.route('/flota')
+def gestion_flota():
+    if 'usuario_nombre' not in session:
+        return redirect(url_for('login'))
+    return render_template('construccion.html', titulo="Gestión de Flota")
+
+@app.route('/puntos')
+def puntos_limpios():
+    if 'usuario_nombre' not in session:
+        return redirect(url_for('login'))
+    return render_template('construccion.html', titulo="Puntos Limpios (Talca)")
+
+@app.route('/reporte-co2')
+def reporte_co2():
+    if 'usuario_nombre' not in session:
+        return redirect(url_for('login'))
+    return render_template('construccion.html', titulo="Reporte de Huella de CO2")
+
 def abrir_navegador():
     webbrowser.open_new("http://127.0.0.1:8000/")
 

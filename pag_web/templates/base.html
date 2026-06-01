@@ -27,13 +27,36 @@
                 </div>
                 <hr class="text-secondary">
                 <ul class="nav nav-pills flex-column mb-auto gap-2">
-                    <li><a href="#" class="nav-link p-3 rounded nav-active"><i class="bi bi-speedometer2"></i> Panel Principal</a></li>
-                    <li><a href="#" class="nav-link p-3 rounded"><i class="bi bi-truck"></i> Gestión de Flota</a></li>
-                    <li><a href="#" class="nav-link p-3 rounded"><i class="bi bi-geo-alt"></i> Puntos Limpios (Talca)</a></li>
-                    <li><a href="#" class="nav-link p-3 rounded"><i class="bi bi-bar-chart-line"></i> Reporte CO2</a></li>
+                    <li>
+                        <a href="/" class="nav-link p-3 rounded {% if request.path == '/' %}nav-active{% endif %}">
+                            <i class="bi bi-speedometer2"></i> Panel Principal
+                        </a>
+                    </li>
+                    
+                    <li>
+                        <a href="/flota" class="nav-link p-3 rounded {% if request.path == '/flota' %}nav-active{% endif %}">
+                            <i class="bi bi-truck"></i> Gestión de Flota
+                        </a>
+                    </li>
+                    
+                    <li>
+                        <a href="/puntos" class="nav-link p-3 rounded {% if request.path == '/puntos' %}nav-active{% endif %}">
+                            <i class="bi bi-geo-alt"></i> Puntos Limpios (Talca)
+                        </a>
+                    </li>
+                    
+                    <li>
+                        <a href="/reporte-co2" class="nav-link p-3 rounded {% if request.path == '/reporte-co2' %}nav-active{% endif %}">
+                            <i class="bi bi-bar-chart-line"></i> Reporte CO2
+                        </a>
+                    </li>
                     
                     {% if session.get('usuario_rol') == 'Jefe' or session.get('usuario_rol') == 'Administrador' %}
-                        <li><a href="/usuarios" class="nav-link p-3 rounded text-warning"><i class="bi bi-people"></i> Gestionar Personal</a></li>
+                        <li>
+                            <a href="/usuarios" class="nav-link p-3 rounded text-warning {% if request.path == '/usuarios' %}nav-active text-white{% endif %}">
+                                <i class="bi bi-people"></i> Gestionar Personal
+                            </a>
+                        </li>
                     {% endif %}
                 </ul>
                 <hr class="text-secondary">

@@ -13,3 +13,18 @@
 .externalNativeBuild
 .cxx
 local.properties
+# Ignorar bases de datos de SQLite
+*.db
+*.sqlite
+*.sqlite3
+redcicla_central.db
+
+# Ignorar archivos temporales y caché de Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignorar entornos virtuales (si llegan a usar uno)
+venv/
+env/
+.env
