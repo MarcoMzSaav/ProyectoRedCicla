@@ -303,7 +303,19 @@ def editar_camion(id_camion):
 def puntos_limpios():
     if 'usuario_nombre' not in session:
         return redirect(url_for('login'))
-    return render_template('construccion.html', titulo="Puntos Limpios (Talca)")
+
+    conexion = sqlite3.connect(DB_PATH)
+    cursor = conexion.cursor()
+
+    cursor.execute("UPDATE puntos_reciclaje SET latitud = -35.4264, longitud = -71.6554 WHERE id = 101 AND latitud IS NULL") # Talca
+    cursor.execute("UPDATE puntos_reciclaje SET latitud = -35.5333, longitud = -71.4833 WHERE id = 105 AND latitud IS NULL") # San Clemente
+    conexion.commit()
+
+    cursor.execute("SELECT id, direccion, latitud, longitud, estado FROM puntos_reciclaje ORDER BY id")
+    lista_puntos = cursor.fetchall()
+    conexion.close()
+
+    return render_template('puntos.html', puntos=lista_puntos)
 
 @app.route('/reporte-co2')
 def reporte_co2():
