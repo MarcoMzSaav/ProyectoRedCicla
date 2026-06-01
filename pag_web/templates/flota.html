@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-dark text-white fw-bold">
+                <i class="bi bi-truck"></i> Registrar Nuevo Camión
+            </div>
+            <div class="card-body bg-white">
+                <form action="/flota/crear" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label small text-muted fw-bold">Patente</label>
+                        <input type="text" name="patente" class="form-control" required placeholder="Ej. AB-CD-12" style="text-transform: uppercase;">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small text-muted fw-bold">Capacidad de Carga (KG)</label>
+                        <input type="number" step="0.1" name="capacidad" class="form-control" required placeholder="Ej. 5000">
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label small text-muted fw-bold">Fecha Última Revisión Técnica</label>
+                        <input type="date" name="revision" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-dark w-100 fw-bold">Guardar Camión en Flota</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white fw-bold text-secondary">
+                <i class="bi bi-card-list"></i> Flota Actual
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Patente</th>
+                            <th>Capacidad</th>
+                            <th>Última Revisión</th>
+                            <th>Mantenimiento</th>
+                            <th>Estado Operativo</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in camiones %}
+                        <tr>
+                            <td class="fw-bold">{{ c[1] }}</td>
+                            <td>{{ c[2] }} KG</td>
+                            <td>{{ c[3] }}</td>
+                            
+                            <td>
+                                {% if c[5] == 1 %}
+                                    <span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle"></i> Alerta Taller</span>
+                                {% else %}
+                                    <span class="badge bg-success"><i class="bi bi-check-circle"></i> Al Día</span>
+                                {% endif %}
+                            </td>
+                            
+                            <td>
+                                {% if c[4] == 1 %}
+                                    <span class="badge bg-primary">Operativo</span>
+                                {% else %}
+                                    <span class="badge bg-danger">En Taller</span>
+                                {% endif %}
+                            </td>
+                            
+                            <td>
+                                <button type="button" class="btn btn-sm btn-outline-secondary me-1" data-bs-toggle="modal" data-bs-target="#modalEditarCamion{{ c[0] }}" title="Editar datos">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+
+                                <form action="/flota/estado/{{ c[0] }}" method="POST" style="display:inline;">
+                                    {% if c[4] == 1 %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Mandar a Taller">A Taller</button>
+                                    {% else %}
+                                        <button type="submit" class="btn btn-sm btn-outline-primary" title="Poner Operativo">Activar</button>
+                                    {% endif %}
+                                </form>
+
+                                <div class="modal fade" id="modalEditarCamion{{ c[0] }}" tabindex="-1" aria-hidden="true">
+                                  <div class="modal-dialog">
+                                    <div class="modal-content">
+                                      <div class="modal-header bg-warning">
+                                        <h5 class="modal-title fw-bold text-dark"><i class="bi bi-pencil-square"></i> Editar Camión</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                      </div>
+                                      <div class="modal-body text-start">
+                                        <form action="/flota/editar/{{ c[0] }}" method="POST">
+                                            <div class="mb-3">
+                                                <label class="form-label small text-muted fw-bold">Patente</label>
+                                                <input type="text" name="patente" class="form-control" value="{{ c[1] }}" required style="text-transform: uppercase;">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label small text-muted fw-bold">Capacidad (KG)</label>
+                                                <input type="number" step="0.1" name="capacidad" class="form-control" value="{{ c[2] }}" required>
+                                            </div>
+                                            <div class="mb-4">
+                                                <label class="form-label small text-muted fw-bold">Fecha Última Revisión</label>
+                                                <input type="date" name="revision" class="form-control" value="{{ c[3] }}" required>
+                                            </div>
+                                            <button type="submit" class="btn btn-warning w-100 fw-bold">Actualizar Datos</button>
+                                        </form>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                                </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">
+                                <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                                No hay camiones registrados en la flota.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
