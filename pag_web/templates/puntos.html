@@ -3,118 +3,83 @@
 {% block content %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-success text-white fw-bold">
-                <i class="bi bi-map"></i> Mapa de Puntos Limpios (Región del Maule)
-            </div>
-            <div class="card-body p-0">
-                <div id="mapa" style="height: 400px; width: 100%; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px; z-index: 1;"></div>
-            </div>
-        </div>
-    </div>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3><i class="bi bi-geo-alt-fill text-success"></i> Gestión de Puntos de Reciclaje</h3>
+    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalNuevoPunto">
+        <i class="bi bi-plus-circle"></i> Registrar Nuevo
+    </button>
 </div>
 
-<div class="row">
-    <div class="col-12">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white fw-bold text-secondary">
-                <i class="bi bi-geo-alt"></i> Listado de Contenedores
-            </div>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>ID Punto</th>
-                            <th>Dirección</th>
-                            <th>Coordenadas (Lat, Lng)</th>
-                            <th>Estado</th>
-                            <th>Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for p in puntos %}
-                        <tr>
-                            <td class="fw-bold text-secondary">#{{ p[0] }}</td>
-                            <td>{{ p[1] }}</td>
-                            <td class="small text-muted">{{ p[2] }}, {{ p[3] }}</td>
-                            <td>
-                                {% if p[4] == 1 %}
-                                    <span class="badge bg-success">Activo</span>
-                                {% else %}
-                                    <span class="badge bg-danger">Inactivo</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary" onclick="centrarMapa({{ p[2] }}, {{ p[3] }})">
-                                    <i class="bi bi-crosshair"></i> Ver en mapa
-                                </button>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="5" class="text-center text-muted py-4">No hay puntos de reciclaje registrados.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+<div class="row mb-4">
+    <div class="col-12"><div id="mapa" style="height: 400px; width: 100%; border-radius: 10px;"></div></div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Dirección</th>
+                    <th>Coordenadas</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in puntos %}
+                <tr>
+                    <td class="fw-bold text-secondary">#{{ p[0] }}</td>
+                    <td>{{ p[1] }}</td>
+                    <td class="small text-muted">{{ p[2] }}, {{ p[3] }}</td>
+                    <td>
+                        {% if p[4] == 1 %} <span class="badge bg-success">Activo</span>
+                        {% else %} <span class="badge bg-danger">Inactivo</span> {% endif %}
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="centrarMapa({{ p[2] }}, {{ p[3] }})"><i class="bi bi-crosshair"></i></button>
+                        
+                        <button class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#modalEditarPunto{{ p[0] }}"><i class="bi bi-pencil"></i></button>
+                        
+                        <form action="/puntos/estado/{{ p[0] }}" method="POST" style="display:inline;">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-power"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+
+                <div class="modal fade" id="modalEditarPunto{{ p[0] }}" tabindex="-1">
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <form action="/puntos/editar/{{ p[0] }}" method="POST">
+                        <div class="modal-header bg-warning"><h5 class="modal-title">Editar Punto #{{ p[0] }}</h5></div>
+                        <div class="modal-body">
+                            <input type="text" name="direccion" class="form-control mb-2" value="{{ p[1] }}" required>
+                            <input type="number" step="any" name="latitud" class="form-control mb-2" value="{{ p[2] }}" required>
+                            <input type="number" step="any" name="longitud" class="form-control mb-2" value="{{ p[3] }}" required>
+                        </div>
+                        <div class="modal-footer"><button type="submit" class="btn btn-warning">Guardar Cambios</button></div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    // 1. Inicializar el mapa centrado en Talca con un zoom de nivel 10
-    var map = L.map('mapa').setView([-35.4264, -71.6554], 10);
-
-    // 2. Cargar los "azulejos" (las calles) desde OpenStreetMap (¡Gratis!)
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
-
-    // 3. Crear un ícono de chincheta color verde
-    var iconoVerde = L.icon({
-        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-        iconSize: [25, 41],
-        iconAnchor: [12, 41],
-        popupAnchor: [1, -34],
-        shadowSize: [41, 41]
-    });
-
-    // 4. Convertir los datos de Python (Jinja) a un arreglo de Javascript
-    var puntosJS = [
-        {% for p in puntos %}
-            {
-                id: {{ p[0] }},
-                direccion: {{ p[1]|tojson }},
-                lat: {{ p[2] if p[2] else 0 }},
-                lng: {{ p[3] if p[3] else 0 }},
-                estado: {{ p[4] }}
-            }{% if not loop.last %},{% endif %}
-        {% endfor %}
-    ];
-
-    // 5. Dibujar cada chincheta en el mapa
-    puntosJS.forEach(function(punto) {
-        if(punto.lat !== 0 && punto.lng !== 0) {
-            var marker = L.marker([punto.lat, punto.lng], {icon: iconoVerde}).addTo(map);
-            
-            var estadoTexto = punto.estado === 1 ? '<span style="color:green;">Activo</span>' : '<span style="color:red;">Inactivo</span>';
-            // Mensaje que sale al hacerle clic a la chincheta
-            marker.bindPopup(`<b>Contenedor #${punto.id}</b><br>${punto.direccion}<br>Estado: ${estadoTexto}`);
+    var map = L.map('mapa').setView([-35.4264, -71.6554], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+    var puntosJS = {{ puntos|tojson }};
+    puntosJS.forEach(function(p) {
+        if(p[2] && p[3]) {
+            L.marker([p[2], p[3]]).addTo(map).bindPopup(`<b>Punto #${p[0]}</b><br>${p[1]}`);
         }
     });
-
-    // 6. Función para el botón "Ver en mapa" (¡Hace un efecto de vuelo increíble!)
-    function centrarMapa(lat, lng) {
-        map.flyTo([lat, lng], 16, {
-            animate: true,
-            duration: 1.5
-        });
-        window.scrollTo({ top: 0, behavior: 'smooth' }); // Sube la pantalla suavemente
-    }
+    function centrarMapa(lat, lng) { map.flyTo([lat, lng], 16, { duration: 1.5 }); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 </script>
 {% endblock %}

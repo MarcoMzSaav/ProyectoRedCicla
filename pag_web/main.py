@@ -317,6 +317,70 @@ def puntos_limpios():
 
     return render_template('puntos.html', puntos=lista_puntos)
 
+@app.route('/puntos/agregar', methods=['POST'])
+def agregar_punto():
+    if 'usuario_nombre' not in session:
+        return redirect(url_for('login'))
+        
+    direccion = request.form['direccion']
+    latitud = request.form['latitud']
+    longitud = request.form['longitud']
+    
+    try:
+        conexion = sqlite3.connect(DB_PATH)
+        cursor = conexion.cursor()
+        cursor.execute("INSERT INTO puntos_reciclaje (direccion, latitud, longitud, estado) VALUES (?, ?, ?, 1)", 
+                       (direccion, float(latitud), float(longitud)))
+        conexion.commit()
+        conexion.close()
+    except Exception as e:
+        print(f"Error al agregar punto: {e}")
+        
+    return redirect(url_for('puntos_limpios'))
+
+# EDICIÓN DE PUNTOS
+@app.route('/puntos/editar/<int:id_punto>', methods=['POST'])
+def editar_punto(id_punto):
+    if 'usuario_nombre' not in session:
+        return redirect(url_for('login'))
+    
+    direccion = request.form['direccion']
+    latitud = request.form['latitud']
+    longitud = request.form['longitud']
+
+    conexion = sqlite3.connect(DB_PATH)
+    cursor = conexion.cursor()
+    cursor.execute('''
+        UPDATE puntos_reciclaje 
+        SET direccion = ?, latitud = ?, longitud = ? 
+        WHERE id = ?
+    ''', (direccion, float(latitud), float(longitud), id_punto))
+    conexion.commit()
+    conexion.close()
+    return redirect(url_for('puntos_limpios'))
+
+# DESHABILITAR/HABILITAR PUNTOS
+@app.route('/puntos/estado/<int:id_punto>', methods=['POST'])
+def cambiar_estado_punto(id_punto):
+    if 'usuario_nombre' not in session:
+        return redirect(url_for('login'))
+
+    conexion = sqlite3.connect(DB_PATH)
+    cursor = conexion.cursor()
+    
+    # Obtenemos el estado actual
+    cursor.execute("SELECT estado FROM puntos_reciclaje WHERE id = ?", (id_punto,))
+    res = cursor.fetchone()
+    
+    if res:
+        estado_actual = res[0]
+        nuevo_estado = 0 if estado_actual == 1 else 1 # Si es 1, pasa a 0; si es 0, pasa a 1
+        cursor.execute("UPDATE puntos_reciclaje SET estado = ? WHERE id = ?", (nuevo_estado, id_punto))
+        conexion.commit()
+    
+    conexion.close()
+    return redirect(url_for('puntos_limpios'))
+
 @app.route('/reporte-co2')
 def reporte_co2():
     if 'usuario_nombre' not in session:
