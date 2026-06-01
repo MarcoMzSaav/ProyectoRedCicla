@@ -3,6 +3,7 @@ import sqlite3
 import webbrowser
 from datetime import datetime
 from threading import Timer
+from werkzeug.security import generate_password_hash, check_password_hash
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from database_central import inicializar_bd_central
 
@@ -20,16 +21,18 @@ def login():
     error = None
     if request.method == 'POST':
         correo = request.form['correo']
-        clave = request.form['clave']
+        clave_ingresada = request.form['clave']
 
         conexion = sqlite3.connect(DB_PATH)
         cursor = conexion.cursor()
-        cursor.execute("SELECT nombre_completo, rol, estado FROM empleados WHERE correo = ? AND clave_acceso = ?", (correo, clave))
+        # Ahora traemos la clave_acceso guardada en la base de datos para compararla
+        cursor.execute("SELECT nombre_completo, rol, estado, clave_acceso FROM empleados WHERE correo = ?", (correo,))
         usuario = cursor.fetchone()
         conexion.close()
 
-        if usuario:
-            nombre, rol, estado = usuario
+        # check_password_hash hace la magia de comprobar si "jefe123" coincide con el hash guardado
+        if usuario and check_password_hash(usuario[3], clave_ingresada):
+            nombre, rol, estado, _ = usuario
             if estado == 1:
                 session['usuario_nombre'] = nombre
                 session['usuario_rol'] = rol
@@ -87,24 +90,30 @@ def gestionar_usuarios():
     conexion.close()
 
     return render_template('usuarios.html', usuarios=lista_usuarios)
-
 @app.route('/usuarios/crear', methods=['POST'])
 def crear_usuario():
-    if session.get('usuario_rol') not in ['Jefe', 'Administrador']:
+    rol_actual = session.get('usuario_rol')
+    if rol_actual not in ['Jefe', 'Administrador']:
         return redirect(url_for('dashboard'))
     
     rut = request.form['rut']
     nombre = request.form['nombre']
     correo = request.form['correo']
     telefono = request.form['telefono']
-    clave = request.form['clave']
-    rol = request.form['rol']
+    clave_plana = request.form['clave']
+    rol_nuevo = request.form['rol']
+
+    if rol_actual == 'Administrador' and rol_nuevo in ['Jefe', 'Administrador']:
+        return redirect(url_for('gestionar_usuarios'))
+
+    # Transformamos la clave plana a un Hash antes de guardarla
+    clave_hash = generate_password_hash(clave_plana)
 
     try:
         conexion = sqlite3.connect(DB_PATH)
         cursor = conexion.cursor()
         cursor.execute("INSERT INTO empleados (rut, nombre_completo, correo, telefono, clave_acceso, rol, estado) VALUES (?, ?, ?, ?, ?, ?, 1)", 
-                       (rut, nombre, correo, telefono, clave, rol))
+                       (rut, nombre, correo, telefono, clave_hash, rol_nuevo))
         conexion.commit()
     except sqlite3.IntegrityError:
         print("Error: El correo o RUT ya existe.") 
@@ -113,41 +122,67 @@ def crear_usuario():
             conexion.close()
     
     return redirect(url_for('gestionar_usuarios'))
-
 @app.route('/usuarios/estado/<int:id_usuario>', methods=['POST'])
 def cambiar_estado_usuario(id_usuario):
-    if session.get('usuario_rol') not in ['Jefe', 'Administrador']:
+    rol_actual = session.get('usuario_rol')
+    if rol_actual not in ['Jefe', 'Administrador']:
         return redirect(url_for('dashboard'))
 
     conexion = sqlite3.connect(DB_PATH)
     cursor = conexion.cursor()
-    cursor.execute("SELECT estado FROM empleados WHERE id = ?", (id_usuario,))
-    estado_actual = cursor.fetchone()[0]
-    nuevo_estado = 0 if estado_actual == 1 else 1
-    cursor.execute("UPDATE empleados SET estado = ? WHERE id = ?", (nuevo_estado, id_usuario))
-    conexion.commit()
-    conexion.close()
+    
+    # Obtener datos del usuario a modificar
+    cursor.execute("SELECT rol, estado FROM empleados WHERE id = ?", (id_usuario,))
+    usuario_db = cursor.fetchone()
+    
+    if usuario_db:
+        rol_objetivo, estado_actual = usuario_db
+        
+        # 🛡️ SEGURIDAD: Un administrador no puede bloquear a un Jefe ni a otro Admin
+        if rol_actual == 'Administrador' and rol_objetivo in ['Jefe', 'Administrador']:
+            conexion.close()
+            return redirect(url_for('gestionar_usuarios'))
 
+        nuevo_estado = 0 if estado_actual == 1 else 1
+        cursor.execute("UPDATE empleados SET estado = ? WHERE id = ?", (nuevo_estado, id_usuario))
+        conexion.commit()
+        
+    conexion.close()
     return redirect(url_for('gestionar_usuarios'))
 
 @app.route('/usuarios/editar/<int:id_usuario>', methods=['POST'])
 def editar_usuario(id_usuario):
-    if session.get('usuario_rol') not in ['Jefe', 'Administrador']:
+    rol_actual = session.get('usuario_rol')
+    if rol_actual not in ['Jefe', 'Administrador']:
         return redirect(url_for('dashboard'))
     
     rut = request.form['rut']
     nombre = request.form['nombre']
     correo = request.form['correo']
     telefono = request.form['telefono']
-    rol = request.form['rol']
+    rol_nuevo = request.form['rol']
 
     conexion = sqlite3.connect(DB_PATH)
     cursor = conexion.cursor()
+    
+    # 🛡️ SEGURIDAD: Comprobamos a quién intentan editar
+    cursor.execute("SELECT rol FROM empleados WHERE id = ?", (id_usuario,))
+    rol_objetivo = cursor.fetchone()[0]
+
+    # Reglas estrictas:
+    # 1. El Admin no puede editar a Jefes ni a otros Admins.
+    # 2. El Admin no puede ascender a un Conductor para que sea Admin.
+    if rol_actual == 'Administrador':
+        if rol_objetivo in ['Jefe', 'Administrador'] or rol_nuevo in ['Jefe', 'Administrador']:
+            conexion.close()
+            return redirect(url_for('gestionar_usuarios'))
+
     cursor.execute('''
         UPDATE empleados 
         SET rut = ?, nombre_completo = ?, correo = ?, telefono = ?, rol = ? 
         WHERE id = ?
-    ''', (rut, nombre, correo, telefono, rol, id_usuario))
+    ''', (rut, nombre, correo, telefono, rol_nuevo, id_usuario))
+    
     conexion.commit()
     conexion.close()
 

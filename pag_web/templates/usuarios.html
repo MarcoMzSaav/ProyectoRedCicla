@@ -34,7 +34,9 @@
                         <select name="rol" class="form-select" required>
                             <option value="Conductor">Conductor</option>
                             <option value="Ayudante">Ayudante</option>
-                            <option value="Administrador">Administrador</option>
+                            {% if session.get('usuario_rol') == 'Jefe' %}
+                                <option value="Administrador">Administrador</option>
+                            {% endif %}
                         </select>
                     </div>
                     <button type="submit" class="btn btn-success w-100 fw-bold">Guardar Usuario</button>
@@ -76,8 +78,13 @@
                                     <span class="badge bg-danger">Bloqueado</span>
                                 {% endif %}
                             </td>
+                            
                             <td>
-                                {% if u[5] != 'Jefe' %}
+                                {% set rol_sesion = session.get('usuario_rol') %}
+                                {% set rol_fila = u[5] %}
+                                
+                                {% if (rol_sesion == 'Jefe' and rol_fila != 'Jefe') or (rol_sesion == 'Administrador' and rol_fila in ['Conductor', 'Ayudante']) %}
+                                
                                     <button type="button" class="btn btn-sm btn-outline-secondary me-1" data-bs-toggle="modal" data-bs-target="#modalEditarUsuario{{ u[0] }}" title="Editar datos">
                                         <i class="bi bi-pencil"></i>
                                     </button>
@@ -120,7 +127,9 @@
                                                     <select name="rol" class="form-select" required>
                                                         <option value="Conductor" {% if u[5] == 'Conductor' %}selected{% endif %}>Conductor</option>
                                                         <option value="Ayudante" {% if u[5] == 'Ayudante' %}selected{% endif %}>Ayudante</option>
-                                                        <option value="Administrador" {% if u[5] == 'Administrador' %}selected{% endif %}>Administrador</option>
+                                                        {% if rol_sesion == 'Jefe' %}
+                                                            <option value="Administrador" {% if u[5] == 'Administrador' %}selected{% endif %}>Administrador</option>
+                                                        {% endif %}
                                                     </select>
                                                 </div>
                                                 <button type="submit" class="btn btn-warning w-100 fw-bold">Actualizar Datos</button>

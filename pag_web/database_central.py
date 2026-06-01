@@ -1,5 +1,6 @@
 import os
 import sqlite3
+from werkzeug.security import generate_password_hash
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, 'redcicla_central.db')
@@ -81,10 +82,19 @@ def inicializar_bd_central():
     except sqlite3.OperationalError as e:
         print(f"⚠️ Error en puntos: {e}")
 
+# 👇 2. REEMPLAZAR ESTA PARTE 👇
     try:
-        cursor.execute("INSERT OR IGNORE INTO empleados (rut, nombre_completo, correo, telefono, clave_acceso, rol, licencia_conducir, estado) VALUES ('11.111.111-1', 'Jefe General', 'jefe@redcicla.cl', '+56911111111', 'jefe123', 'Jefe', 'N/A', 1)")
-        cursor.execute("INSERT OR IGNORE INTO empleados (rut, nombre_completo, correo, telefono, clave_acceso, rol, licencia_conducir, estado) VALUES ('22.222.222-2', 'Admin Talca', 'admin@redcicla.cl', '+56922222222', 'admin123', 'Administrador', 'N/A', 1)")
-        cursor.execute("INSERT OR IGNORE INTO empleados (rut, nombre_completo, correo, telefono, clave_acceso, rol, licencia_conducir, estado) VALUES ('33.333.333-3', 'Conductor Despedido', 'juan@redcicla.cl', '+56933333333', 'juan123', 'Conductor', 'A4', 0)")
+        # Generamos los hashes de las contraseñas
+        hash_jefe = generate_password_hash('jefe123')
+        hash_admin = generate_password_hash('admin123')
+        hash_juan = generate_password_hash('juan123')
+
+        cursor.execute("INSERT OR IGNORE INTO empleados (rut, nombre_completo, correo, telefono, clave_acceso, rol, licencia_conducir, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 
+                       ('11.111.111-1', 'Jefe General', 'jefe@redcicla.cl', '+56911111111', hash_jefe, 'Jefe', 'N/A', 1))
+        cursor.execute("INSERT OR IGNORE INTO empleados (rut, nombre_completo, correo, telefono, clave_acceso, rol, licencia_conducir, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 
+                       ('22.222.222-2', 'Admin Talca', 'admin@redcicla.cl', '+56922222222', hash_admin, 'Administrador', 'N/A', 1))
+        cursor.execute("INSERT OR IGNORE INTO empleados (rut, nombre_completo, correo, telefono, clave_acceso, rol, licencia_conducir, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 
+                       ('33.333.333-3', 'Conductor Despedido', 'juan@redcicla.cl', '+56933333333', hash_juan, 'Conductor', 'A4', 0))
         conexion.commit()
     except sqlite3.OperationalError as e:
         print(f"⚠️ Error en empleados: {e}")
