@@ -25,14 +25,25 @@ import okhttp3.Response;
 public class SyncManager {
 
     private static final String TAG = "SyncManager";
-    // IP 10.0.2.2 es para el emulador Android apuntando al localhost de la PC
-    private static final String API_URL = "http://10.0.2.2:8000/api/sincronizar"; 
-    
+    private static final String BASE_URL = "http://10.0.2.2:8000";
+    private static final String API_URL = BASE_URL + "/api/sincronizar";
+    private static final String LOGIN_URL = BASE_URL + "/api/login";
+
     private final Context context;
     private final ConexionSQLite dbHelper;
     private final OkHttpClient client;
     private final Gson gson;
     private final ExecutorService executor;
+
+    public interface LoginCallback {
+        void onSuccess(int id, String nombre, String rol);
+        void onError(String mensaje);
+    }
+
+    public interface RouteCallback {
+        void onSuccess(JsonObject data);
+        void onError(String mensaje);
+    }
 
     public SyncManager(Context context) {
         this.context = context;
@@ -40,6 +51,46 @@ public class SyncManager {
         this.client = new OkHttpClient();
         this.gson = new Gson();
         this.executor = Executors.newSingleThreadExecutor();
+    }
+
+    public void login(String correo, String clave, LoginCallback callback) {
+        executor.execute(() -> {
+            JsonObject json = new JsonObject();
+            json.addProperty("correo", correo);
+            json.addProperty("clave", clave);
+
+            RequestBody body = RequestBody.create(
+                    gson.toJson(json),
+                    MediaType.parse("application/json; charset=utf-8")
+            );
+
+            Request request = new Request.Builder()
+                    .url(LOGIN_URL)
+                    .post(body)
+                    .build();
+
+            try (Response response = client.newCall(request).execute()) {
+                String responseData = response.body().string();
+                JsonObject responseJson = gson.fromJson(responseData, JsonObject.class);
+
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    if (response.isSuccessful()) {
+                        int id = responseJson.get("id").getAsInt();
+                        String nombre = responseJson.get("nombre").getAsString();
+                        String rol = responseJson.get("rol").getAsString();
+                        callback.onSuccess(id, nombre, rol);
+                    } else {
+                        String error = responseJson.has("message") ? 
+                                responseJson.get("message").getAsString() : "Error en login";
+                        callback.onError(error);
+                    }
+                });
+            } catch (IOException e) {
+                new Handler(Looper.getMainLooper()).post(() -> 
+                    callback.onError("Error de conexión con el servidor")
+                );
+            }
+        });
     }
 
     public void sincronizarDatos() {
@@ -54,10 +105,13 @@ public class SyncManager {
             JsonArray jsonArray = new JsonArray();
             while (cursor.moveToNext()) {
                 JsonObject obj = new JsonObject();
-                // Ojo: los nombres de llaves deben coincidir con lo que espera Flask en main.py
-                obj.addProperty("punto_reciclaje_id", cursor.getInt(cursor.getColumnIndexOrThrow("punto_reciclaje_id")));
-                obj.addProperty("cantidad_conductor", cursor.getFloat(cursor.getColumnIndexOrThrow("cantidad_retirada")));
+                // Usamos los nombres de columna actualizados
+                obj.addProperty("ruta_activa_id", cursor.getInt(cursor.getColumnIndexOrThrow("ruta_activa_id")));
+                obj.addProperty("punto_id", cursor.getInt(cursor.getColumnIndexOrThrow("punto_id")));
+                obj.addProperty("cantidad_retirada", cursor.getFloat(cursor.getColumnIndexOrThrow("cantidad_retirada")));
                 obj.addProperty("fecha_hora", cursor.getString(cursor.getColumnIndexOrThrow("fecha_hora")));
+                obj.addProperty("ruta_img_antes", cursor.getString(cursor.getColumnIndexOrThrow("ruta_img_antes")));
+                obj.addProperty("ruta_img_despues", cursor.getString(cursor.getColumnIndexOrThrow("ruta_img_despues")));
                 jsonArray.add(obj);
             }
             cursor.close();
@@ -75,7 +129,6 @@ public class SyncManager {
 
             try (Response response = client.newCall(request).execute()) {
                 if (response.isSuccessful()) {
-                    // Si el servidor respondió OK, marcamos como sincronizados en la BD local
                     marcarComoSincronizados();
                     mostrarToast("Sincronización exitosa con Talca");
                 } else {
@@ -88,8 +141,31 @@ public class SyncManager {
         });
     }
 
+    public void obtenerRutaActiva(int usuarioId, RouteCallback callback) {
+        executor.execute(() -> {
+            Request request = new Request.Builder()
+                    .url(BASE_URL + "/api/ruta_activa/" + usuarioId)
+                    .get()
+                    .build();
+
+            try (Response response = client.newCall(request).execute()) {
+                String responseData = response.body().string();
+                JsonObject json = gson.fromJson(responseData, JsonObject.class);
+
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    if (response.isSuccessful()) {
+                        callback.onSuccess(json);
+                    } else {
+                        callback.onError(json.get("message").getAsString());
+                    }
+                });
+            } catch (IOException e) {
+                new Handler(Looper.getMainLooper()).post(() -> callback.onError("Error de conexión"));
+            }
+        });
+    }
+
     private void marcarComoSincronizados() {
-        // Actualizamos todos los registros que estaban en 0 a 1
         dbHelper.getWritableDatabase().execSQL("UPDATE registros_retiro SET sincronizado = 1 WHERE sincronizado = 0");
     }
 

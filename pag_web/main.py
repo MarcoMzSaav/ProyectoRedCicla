@@ -5,7 +5,7 @@ from datetime import datetime
 from threading import Timer
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
-from database_central import inicializar_bd_central
+from database_central import inicializar_bd_central, crear_ruta_prueba
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, 'redcicla_central.db')
@@ -34,9 +34,13 @@ def login():
         if usuario and check_password_hash(usuario[3], clave_ingresada):
             nombre, rol, estado, _ = usuario
             if estado == 1:
-                session['usuario_nombre'] = nombre
-                session['usuario_rol'] = rol
-                return redirect(url_for('dashboard'))
+                # 🛡️ SEGURIDAD: Solo Jefe y Administrador pueden entrar a la Plataforma Web
+                if rol in ['Jefe', 'Administrador']:
+                    session['usuario_nombre'] = nombre
+                    session['usuario_rol'] = rol
+                    return redirect(url_for('dashboard'))
+                else:
+                    error = "Acceso denegado: Esta plataforma es solo para personal Administrativo."
             else:
                 error = "Su cuenta ha sido desactivada. Contacte al Jefe de Operaciones."
         else:
@@ -61,7 +65,7 @@ def dashboard():
         conexion = sqlite3.connect(DB_PATH)
         cursor = conexion.cursor()
         cursor.execute('''
-            SELECT r.punto_id, p.direccion, r.fecha_hora, r.cantidad_retirada, r.estado
+            SELECT r.punto_id, p.direccion, r.fecha_hora, r.cantidad_retirada, 0.0, r.estado
             FROM registros_retiro r
             JOIN puntos_reciclaje p ON r.punto_id = p.id
             ORDER BY r.id DESC
@@ -326,6 +330,99 @@ def reporte_co2():
 # ==========================================
 # 6. API DE SINCRONIZACIÓN MÓVIL
 # ==========================================
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    datos = request.get_json()
+    correo = datos.get('correo')
+    clave = datos.get('clave')
+
+    conexion = sqlite3.connect(DB_PATH)
+    cursor = conexion.cursor()
+    # Obtenemos el ID además de los otros datos
+    cursor.execute("SELECT id, nombre_completo, rol, estado, clave_acceso FROM empleados WHERE correo = ?", (correo,))
+    usuario = cursor.fetchone()
+    conexion.close()
+
+    if usuario and check_password_hash(usuario[4], clave):
+        if usuario[3] == 1:
+            # 🛡️ SEGURIDAD: Solo Conductores y Ayudantes pueden entrar a la App Móvil
+            rol_usuario = usuario[2]
+            if rol_usuario in ['Conductor', 'Ayudante']:
+                return jsonify({
+                    "status": "success",
+                    "id": usuario[0],
+                    "nombre": usuario[1],
+                    "rol": rol_usuario
+                }), 200
+            else:
+                return jsonify({
+                    "status": "error", 
+                    "message": "Acceso denegado: Solo personal de terreno (Conductores/Ayudantes)"
+                }), 403
+        else:
+            return jsonify({"status": "error", "message": "Cuenta desactivada"}), 403
+    
+    return jsonify({"status": "error", "message": "Credenciales inválidas"}), 401
+
+@app.route('/api/ruta_activa/<int:usuario_id>', methods=['GET'])
+def api_ruta_activa(usuario_id):
+    try:
+        conexion = sqlite3.connect(DB_PATH)
+        cursor = conexion.cursor()
+        
+        # Buscamos una ruta donde el usuario sea conductor o ayudante y no haya terminado (fecha_fin IS NULL)
+        cursor.execute('''
+            SELECT ra.id, r.nombre, ra.fecha_inicio, c.patente
+            FROM rutas_activas ra
+            JOIN rutas r ON ra.ruta_id = r.id
+            JOIN camiones c ON ra.camion_id = c.id
+            WHERE (ra.conductor_id = ? OR ra.ayudante_id = ?) AND ra.fecha_fin IS NULL
+            LIMIT 1
+        ''', (usuario_id, usuario_id))
+        
+        ruta = cursor.fetchone()
+        
+        if not ruta:
+            conexion.close()
+            return jsonify({"status": "error", "message": "No tienes rutas activas asignadas"}), 404
+            
+        ruta_id_activa = ruta[0]
+        
+        # Ahora obtenemos los puntos de esa ruta (incluyendo capacidad)
+        cursor.execute('''
+            SELECT p.id, p.direccion, p.capacidad
+            FROM puntos_reciclaje p
+            JOIN rutas_activas ra ON p.ruta_id = ra.ruta_id
+            WHERE ra.id = ? AND p.estado = 1
+        ''', (ruta_id_activa,))
+        
+        puntos = [{"id": row[0], "direccion": row[1], "capacidad": row[2]} for row in cursor.fetchall()]
+        
+        conexion.close()
+        
+        return jsonify({
+            "status": "success",
+            "ruta_activa_id": ruta_id_activa,
+            "nombre_ruta": ruta[1],
+            "patente_camion": ruta[3],
+            "puntos": puntos
+        }), 200
+        
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/puntos', methods=['GET'])
+def api_get_puntos():
+    try:
+        conexion = sqlite3.connect(DB_PATH)
+        cursor = conexion.cursor()
+        cursor.execute("SELECT id, direccion FROM puntos_reciclaje WHERE estado = 1")
+        puntos = [{"id": row[0], "direccion": row[1]} for row in cursor.fetchall()]
+        conexion.close()
+        return jsonify(puntos), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 @app.route('/api/sincronizar', methods=['POST'])
 def sincronizar_datos():
     conexion = None
@@ -339,12 +436,15 @@ def sincronizar_datos():
 
         for registro in datos_recibidos:
             cursor.execute('''
-                INSERT INTO registros_retiro (punto_id, cantidad_retirada, fecha_hora, estado)
-                VALUES (?, ?, ?, 'Pendiente')
+                INSERT INTO registros_retiro (ruta_activa_id, punto_id, fecha_hora, cantidad_retirada, ruta_img_antes, ruta_img_despues, estado)
+                VALUES (?, ?, ?, ?, ?, ?, 'Pendiente')
             ''', (
-                int(registro['punto_reciclaje_id']),
-                float(registro['cantidad_conductor']),
-                registro['fecha_hora']
+                int(registro['ruta_activa_id']),
+                int(registro['punto_id']),
+                registro['fecha_hora'],
+                float(registro['cantidad_retirada']),
+                registro.get('ruta_img_antes', ''),
+                registro.get('ruta_img_despues', '')
             ))
 
         conexion.commit()
@@ -364,6 +464,7 @@ def abrir_navegador():
 if __name__ == '__main__':
     os.system('cls' if os.name == 'nt' else 'clear')
     inicializar_bd_central()
+    crear_ruta_prueba()
     
     print("=" * 60)
     print("♻️  PLATAFORMA WEB ADMINISTRATIVA - REDCICLA (TALCA)  ♻️")

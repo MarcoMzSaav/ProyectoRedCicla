@@ -103,8 +103,22 @@
 <script>
 function simularEnvioCelular() {
     const datosMockCelular = [
-        { punto_reciclaje_id: 101, cantidad_conductor: 312.5, fecha_hora: "21-05-2026 14:20" },
-        { punto_reciclaje_id: 105, cantidad_conductor: 580.2, fecha_hora: "21-05-2026 16:45" }
+        {
+            ruta_activa_id: 1,
+            punto_id: 201,
+            cantidad_retirada: 312.5,
+            fecha_hora: "21-05-2026 14:20",
+            ruta_img_antes: "img1.jpg",
+            ruta_img_despues: "img2.jpg"
+        },
+        {
+            ruta_activa_id: 1,
+            punto_id: 202,
+            cantidad_retirada: 580.2,
+            fecha_hora: "21-05-2026 16:45",
+            ruta_img_antes: "img3.jpg",
+            ruta_img_despues: "img4.jpg"
+        }
     ];
 
     fetch('/api/sincronizar', {
