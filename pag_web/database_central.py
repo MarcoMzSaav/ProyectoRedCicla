@@ -69,7 +69,31 @@ def inicializar_bd_central():
             FOREIGN KEY(ruta_activa_id) REFERENCES rutas_activas(id), FOREIGN KEY(punto_id) REFERENCES puntos_reciclaje(id)
         )
     ''')
-
+# --- SEMBRADO AUTOMÁTICO DE PUNTOS (SEEDING) ---
+    cursor.execute("SELECT COUNT(*) FROM puntos_reciclaje")
+    if cursor.fetchone()[0] == 0:
+        puntos_talca = [
+            ("1 Oriente 4 Norte", -35.4264, -71.6554),
+            ("Av. Lircay 1230", -35.4120, -71.6620),
+            ("Dos Sur 1540", -35.4280, -71.6500),
+            ("Av. Colin 890", -35.4450, -71.6680),
+            ("Calle 11 Oriente 234", -35.4300, -71.6400),
+            ("Av. San Miguel 3450", -35.4520, -71.6800),
+            ("Cinco Oriente 560", -35.4200, -71.6500),
+            ("Alameda 1200", -35.4270, -71.6580),
+            ("Calle 30 Oriente 112", -35.4350, -71.6350),
+            ("Av. Isidoro del Solar 90", -35.4220, -71.6650),
+            ("Calle 8 Sur 1400", -35.4400, -71.6450),
+            ("Av. Cancha Rayada 550", -35.4180, -71.6700),
+            ("Calle 4 Norte 320", -35.4230, -71.6520),
+            ("Av. circunvalación 2200", -35.4550, -71.6600),
+            ("Calle 1 Sur 500", -35.4260, -71.6500),
+            ("Parque Piduco 100", -35.4320, -71.6580)
+        ]
+        cursor.executemany("INSERT INTO puntos_reciclaje (direccion, latitud, longitud, estado) VALUES (?, ?, ?, 1)", puntos_talca)
+        print("✅ Base de datos poblada con 16 puntos de reciclaje en Talca.")
+    # -----------------------------------------------
+    
     conexion.commit()
 
     # --- INYECCIÓN DE DATOS MOCK ---
