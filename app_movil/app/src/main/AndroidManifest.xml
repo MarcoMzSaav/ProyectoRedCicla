@@ -15,6 +15,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AppRedCicla"
         android:usesCleartextTraffic="true">
+        <activity android:name=".MapaActivity" />
         <activity
             android:name=".RegistrarRetiroActivity"
             android:exported="false" />

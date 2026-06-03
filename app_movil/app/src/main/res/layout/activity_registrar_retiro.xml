@@ -129,6 +129,38 @@
                 android:textSize="14sp" />
 
         </LinearLayout>
+        <LinearLayout
+            android:id="@+id/menuInferior"
+            android:layout_width="match_parent"
+            android:layout_height="70dp"
+            android:layout_marginTop="16dp"
+            android:orientation="horizontal"
+            android:background="#FFFFFF"
+            android:elevation="8dp"
+            android:padding="8dp">
+
+            <Button
+                android:id="@+id/btnRetiroActual"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:text="RETIRO"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#7BAF6F" />
+
+            <Button
+                android:id="@+id/btnIrMapa"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="MAPA"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#2F6B3A" />
+
+        </LinearLayout>
 
     </LinearLayout>
 

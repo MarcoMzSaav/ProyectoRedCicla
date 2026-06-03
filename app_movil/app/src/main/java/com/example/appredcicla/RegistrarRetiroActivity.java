@@ -2,6 +2,7 @@ package com.example.appredcicla;
 
 import android.os.Bundle;
 import android.view.View;
+import android.content.Intent;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -9,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+
 
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -59,6 +61,12 @@ public class RegistrarRetiroActivity extends AppCompatActivity {
         campoKgVidrio = findViewById(R.id.inputKgVidrio);
         botonGuardar = findViewById(R.id.btnGuardarRetiro);
         botonSincronizar = findViewById(R.id.btnSincronizar);
+        Button btnIrMapa = findViewById(R.id.btnIrMapa);
+
+        btnIrMapa.setOnClickListener(v -> {
+            Intent intent = new Intent(RegistrarRetiroActivity.this, MapaActivity.class);
+            startActivity(intent);
+        });
 
         // 1. Cargar Ruta Activa
         int usuarioId = getSharedPreferences("Sesion", MODE_PRIVATE).getInt("usuario_id", -1);

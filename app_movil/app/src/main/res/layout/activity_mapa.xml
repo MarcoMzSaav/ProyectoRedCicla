@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#F7FAF2">
+
+    <TextView
+        android:id="@+id/txtTituloMapa"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Mapa de Puntos"
+        android:textStyle="bold"
+        android:textSize="22sp"
+        android:textColor="#2F6B3A"
+        android:gravity="center"
+        android:padding="16dp" />
+
+    <WebView
+        android:id="@+id/webViewMapa"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <LinearLayout
+        android:id="@+id/menuInferior"
+        android:layout_width="match_parent"
+        android:layout_height="70dp"
+        android:orientation="horizontal"
+        android:background="#FFFFFF"
+        android:elevation="8dp"
+        android:padding="8dp">
+
+        <Button
+            android:id="@+id/btnIrRetiro"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="RETIRO"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#2F6B3A" />
+
+        <Button
+            android:id="@+id/btnMapaActual"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:text="MAPA"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#7BAF6F" />
+
+    </LinearLayout>
+
+</LinearLayout>

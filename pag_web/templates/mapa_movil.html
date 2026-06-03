@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Mapa RedCicla Móvil</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+        }
+
+        #map {
+            height: 100vh;
+            width: 100vw;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <script>
+        const map = L.map('map').setView([-35.4264, -71.6554], 13);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        const puntos = [
+            { direccion: "1 Oriente 4 Norte", lat: -35.4264, lng: -71.6554 },
+            { direccion: "Av. Lircay 1230", lat: -35.412, lng: -71.662 },
+            { direccion: "Dos Sur 1540", lat: -35.428, lng: -71.650 },
+            { direccion: "Av. Colín 890", lat: -35.445, lng: -71.668 },
+            { direccion: "Calle 11 Oriente 234", lat: -35.430, lng: -71.640 }
+        ];
+
+        puntos.forEach(punto => {
+            L.marker([punto.lat, punto.lng])
+                .addTo(map)
+                .bindPopup(punto.direccion);
+        });
+    </script>
+
+</body>
+</html>
