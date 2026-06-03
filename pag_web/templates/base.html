@@ -6,6 +6,7 @@
     <title>RedCicla - Administración Central</title>
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/LOGO_SIN_TEXTO.png') }}">
     
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
@@ -15,158 +16,207 @@
     
     <style>
         :root {
-            --color-primary-green: #79AE6F;
-            --color-light-green: #9fcb98;
+            /* Paleta unificada en base al verde menta del fondo */
+            --color-bg-light: #e6f4e8;       /* El verde menta del fondo general */
+            --color-sidebar-combine: #d8ebd0; /* Un verde menta sutilmente más profundo para combinar */
+            --color-primary-green: #79AE6F;  /* Verde de acento para los hovers */
+            --color-bubble-bg: #ffffff;      /* Blanco para las burbujas de contenido */
             --color-dark: #000000;
             --color-red: #b21c19;
-            --color-beige: #eacd96;
-            --color-bg-soft: #f4f7f5;
+            
+            /* Curvatura estilo burbuja iOS */
+            --ios-bubble-radius: 24px;
+            --ios-pill-radius: 16px;
         }
 
         body {
             font-family: 'Quicksand', sans-serif;
-            background-color: var(--color-bg-soft);
+            background-color: var(--color-bg-light);
+            min-height: 100vh;
+            color: #1c1c1e;
+        }
+
+        /* Contenedor wrapper con márgenes estilo escritorio */
+        .main-wrapper {
+            padding: 20px;
             min-height: 100vh;
         }
 
-        /* Sidebar con el degradado institucional elegante */
+        /* Sidebar: Ahora combinada con el fondo, sin degradados fuertes */
         .sidebar { 
-            min-height: 100vh; 
-            background: linear-gradient(180deg, #ffffff 0%, #f1f8f2 100%); 
-            border-right: 1px solid rgba(0,0,0,0.05);
-            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.02);
+            background-color: var(--color-sidebar-combine) !important; 
+            border-radius: var(--ios-bubble-radius);
+            box-shadow: 0 8px 24px rgba(121, 174, 111, 0.04);
+            border: 1px solid rgba(121, 174, 111, 0.15);
+            padding: 25px 15px;
         }
 
-        /* Enlaces del menú lateral */
+        /* Enlaces de la barra lateral integrados orgánicamente */
         .sidebar a { 
-            color: #4a5568; 
+            color: #2c3e29; 
             text-decoration: none; 
             font-weight: 700;
             font-size: 0.95rem;
-            transition: all 0.3s ease;
+            border-radius: var(--ios-pill-radius) !important;
+            transition: all 0.2s ease-in-out;
         }
 
-        /* Efecto Hover sobre los elementos del menú */
+        /* Hover estilo iOS: Una burbuja blanca translúcida al pasar el cursor */
         .sidebar a:hover { 
-            background-color: rgba(159, 203, 152, 0.15) !important; 
+            background-color: rgba(255, 255, 255, 0.4) !important; 
             color: var(--color-dark) !important; 
-            transform: translateX(4px);
         }
 
-        /* Módulo Activo resaltado con la paleta del Login */
+        /* Módulo Activo: Resalta como una burbuja blanca sólida e impecable con fuente cursiva */
         .nav-active { 
-            background-color: var(--color-primary-green) !important; 
-            color: #ffffff !important; 
-            box-shadow: 0 4px 10px rgba(121, 174, 111, 0.3);
+            background-color: var(--color-bubble-bg) !important; 
+            color: var(--color-dark) !important; 
+            font-family: 'Pacifico', cursive;
+            font-size: 1.1rem !important;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(121, 174, 111, 0.1);
         }
         
         .nav-active:hover {
-            color: #ffffff !important;
-            transform: none !important;
+            color: var(--color-dark) !important;
         }
 
-        /* Estilización del texto "Gestionar Personal" en modo pasivo */
+        /* Color para Gestionar Personal integrado a la paleta */
         .text-warning-custom {
             color: var(--color-red) !important;
         }
 
-        /* Texto inferior de la Universidad de Talca */
         .brand-footer {
-            font-family: 'Quicksand', sans-serif;
             font-weight: 700;
+            color: #5a7a55;
             letter-spacing: 0.5px;
-            color: #a0aec0;
         }
 
-        /* Títulos de sección con tipografía fluida */
         .section-title {
             font-family: 'Pacifico', cursive;
             color: var(--color-dark);
             font-size: 1.8rem;
         }
 
-        /* Botón superior de Perfil */
+        /* Botón de Perfil estilo píldora premium */
         .btn-profile {
-            border: 1px solid var(--color-light-green) !important;
-            color: #4a5568 !important;
-            background-color: #ffffff;
-            border-radius: 12px;
-            transition: all 0.3s ease;
+            border: 1px solid rgba(121, 174, 111, 0.2) !important;
+            color: #2c3e29 !important;
+            background-color: var(--color-bubble-bg);
+            border-radius: var(--ios-pill-radius);
+            font-weight: 600;
+            transition: all 0.2s ease;
         }
 
         .btn-profile:hover {
-            background-color: var(--color-light-green);
-            color: #ffffff !important;
+            background-color: var(--color-sidebar-combine);
+        }
+
+        /* TRUCO DE ADAPTACIÓN PARA LOS MÓDULOS HIJOS */
+        /* Moldea los contenedores de las subpáginas como burbujas blancas flotantes perfectas */
+        .card, .bg-white {
+            background-color: var(--color-bubble-bg) !important;
+            border-radius: var(--ios-bubble-radius) !important;
+            border: 1px solid rgba(121, 174, 111, 0.1) !important;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.02) !important;
+            padding: 18px;
+        }
+
+        /* Suavizado para tablas internas */
+        .table-responsive {
+            border-radius: var(--ios-pill-radius);
+            overflow: hidden;
+        }
+        .table {
+            margin-bottom: 0;
+            --bs-table-bg: var(--color-bubble-bg) !important;
+        }
+        .table-light {
+            --bs-table-bg: #f4f9f3 !important;
+            --bs-table-color: #2c3e29 !important;
         }
     </style>
 </head>
 <body>
 
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-md-3 col-lg-2 px-0 sidebar d-flex flex-column p-3">
-                <div class="text-center my-3">
-                    <img src="{{ url_for('static', filename='images/LOGO_TEXTO_BESIDE.png') }}" 
-                         alt="Logo RedCicla" 
-                         class="img-fluid px-2" 
-                         style="max-height: 55px; object-fit: contain;">
-                </div>
-                <hr style="opacity: 0.1;">
-                
-                <ul class="nav nav-pills flex-column mb-auto gap-2">
-                    <li>
-                        <a href="/" class="nav-link p-3 rounded {% if request.path == '/' %}nav-active{% endif %}">
-                            <i class="bi bi-speedometer2 me-2"></i> Panel Principal
-                        </a>
-                    </li>
+    <div class="container-fluid main-wrapper">
+        <div class="row g-3">
+            
+            <!-- Menú Lateral: Combinado armónicamente con el fondo -->
+            <div class="col-md-3 col-lg-2">
+                <div class="sidebar d-flex flex-column h-100">
+                    <div class="text-center my-2">
+                        <img src="{{ url_for('static', filename='images/LOGO_TEXTO_BESIDE.png') }}" 
+                             alt="Logo RedCicla" 
+                             class="img-fluid px-2" 
+                             style="max-height: 52px; object-fit: contain;">
+                    </div>
+                    <hr style="opacity: 0.1; background-color: var(--color-primary-green);">
                     
-                    <li>
-                        <a href="/flota" class="nav-link p-3 rounded {% if request.path == '/flota' %}nav-active{% endif %}">
-                            <i class="bi bi-truck me-2"></i> Gestión de Flota
-                        </a>
-                    </li>
-                    
-                    <li>
-                        <a href="/puntos" class="nav-link p-3 rounded {% if request.path == '/puntos' %}nav-active{% endif %}">
-                            <i class="bi bi-geo-alt me-2"></i> Puntos Limpios (Talca)
-                        </a>
-                    </li>
-                    
-                    <li>
-                        <a href="/reporte-co2" class="nav-link p-3 rounded {% if request.path == '/reporte-co2' %}nav-active{% endif %}">
-                            <i class="bi bi-bar-chart-line me-2"></i> Reporte CO2
-                        </a>
-                    </li>
-                    
-                    {% if session.get('usuario_rol') == 'Jefe' or session.get('usuario_rol') == 'Administrador' %}
+                    <ul class="nav nav-pills flex-column mb-auto gap-2">
                         <li>
-                            <a href="/usuarios" class="nav-link p-3 rounded text-warning-custom {% if request.path == '/usuarios' %}nav-active text-white{% endif %}">
-                                <i class="bi bi-people me-2"></i> Gestionar Personal
+                            <a href="/" class="nav-link p-3 {% if request.path == '/' %}nav-active{% endif %}">
+                                <i class="bi bi-speedometer2 me-2"></i> Panel Principal
                             </a>
                         </li>
-                    {% endif %}
-                </ul>
-                
-                <hr style="opacity: 0.1;">
-                <div class="small text-center brand-footer py-2">Módulo FISO - UTALCA</div>
-            </div>
-
-            <div class="col-md-9 col-lg-10 p-4">
-                <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom" style="border-color: rgba(0,0,0,0.05) !important;">
-                    <h2 class="section-title">Región del Maule</h2>
-                    <div class="dropdown">
-                        <button class="btn btn-profile dropdown-toggle fw-bold px-3 py-2" type="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-person-circle me-1 text-success"></i> {{ session.get('usuario_nombre') }} ({{ session.get('usuario_rol') }})
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end border-0 shadow-sm rounded-3">
-                            <li><a class="dropdown-item text-danger py-2" href="/logout"><i class="bi bi-box-arrow-right me-2"></i> Cerrar Sesión</a></li>
-                        </ul>
-                    </div>
+                        
+                        <li>
+                            <a href="/flota" class="nav-link p-3 {% if request.path == '/flota' %}nav-active{% endif %}">
+                                <i class="bi bi-truck me-2"></i> Gestión de Flota
+                            </a>
+                        </li>
+                        
+                        <li>
+                            <a href="/puntos" class="nav-link p-3 {% if request.path == '/puntos' %}nav-active{% endif %}">
+                                <i class="bi bi-geo-alt me-2"></i> Puntos Limpios (Talca)
+                            </a>
+                        </li>
+                        
+                        <li>
+                            <a href="/reporte-co2" class="nav-link p-3 {% if request.path == '/reporte-co2' %}nav-active{% endif %}">
+                                <i class="bi bi-bar-chart-line me-2"></i> Reporte CO2
+                            </a>
+                        </li>
+                        
+                        {% if session.get('usuario_rol') == 'Jefe' or session.get('usuario_rol') == 'Administrador' %}
+                            <li>
+                                <a href="/usuarios" class="nav-link p-3 text-warning-custom {% if request.path == '/usuarios' %}nav-active{% endif %}">
+                                    <i class="bi bi-people me-2"></i> Gestionar Personal
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                    
+                    <hr style="opacity: 0.1; background-color: var(--color-primary-green);">
+                    <div class="small text-center brand-footer py-1">Módulo FISO - UTALCA</div>
                 </div>
-
-                {% block content %}
-                {% endblock %}
             </div>
+
+            <!-- Gran Panel de Contenido Principal -->
+            <div class="col-md-9 col-lg-10">
+                <!-- El gran contenedor translúcido une visualmente todo el diseño -->
+                <div class="h-100 p-4" style="background-color: rgba(255, 255, 255, 0.4); border-radius: var(--ios-bubble-radius); border: 1px solid rgba(255,255,255,0.5); box-shadow: 0 15px 35px rgba(0,0,0,0.01);">
+                    
+                    <!-- Barra de Navegación Interna -->
+                    <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom" style="border-color: rgba(121, 174, 111, 0.15) !important;">
+                        <h2 class="section-title">Región del Maule</h2>
+                        <div class="dropdown">
+                            <button class="btn btn-profile dropdown-toggle fw-bold px-3 py-2" type="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-person-circle me-1 text-success"></i> {{ session.get('usuario_nombre') }} ({{ session.get('usuario_rol') }})
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg p-2" style="border-radius: var(--ios-pill-radius);">
+                                <li><a class="dropdown-item text-danger py-2 rounded-3" href="/logout"><i class="bi bi-box-arrow-right me-2"></i> Cerrar Sesión</a></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Renderizado seguro de las subpáginas de Flask -->
+                    {% block content %}
+                    {% endblock %}
+                    
+                </div>
+            </div>
+
         </div>
     </div>
 
