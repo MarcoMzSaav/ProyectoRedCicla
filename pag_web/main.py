@@ -59,7 +59,6 @@ def dashboard():
     if 'usuario_nombre' not in session:
         return redirect(url_for('login'))
 
-<<<<<<< HEAD
     conexion = sqlite3.connect(DB_PATH)
     cursor = conexion.cursor()
     cursor.execute('''
@@ -70,23 +69,6 @@ def dashboard():
     ''')
     retiros_db = cursor.fetchall()
     conexion.close()
-=======
-    try:
-        conexion = sqlite3.connect(DB_PATH)
-        cursor = conexion.cursor()
-        cursor.execute('''
-            SELECT r.punto_id, p.direccion, r.fecha_hora, r.cantidad_retirada, 0.0, r.estado
-            FROM registros_retiro r
-            JOIN puntos_reciclaje p ON r.punto_id = p.id
-            ORDER BY r.id DESC
-        ''')
-        retiros_db = cursor.fetchall()
-    except Exception as e:
-        retiros_db = []
-    finally:
-        if 'conexion' in locals():
-            conexion.close() 
->>>>>>> 4ca7c983dc0e380a2826f5e8b223f797b3bfd146
         
     return render_template('dashboard.html', retiros=retiros_db, nombre=session.get('usuario_nombre'), rol=session.get('usuario_rol'))
 
@@ -496,8 +478,9 @@ def abrir_navegador():
 
 if __name__ == '__main__':
     os.system('cls' if os.name == 'nt' else 'clear')
+    
+    # Esta es la ÚNICA función de base de datos que debes llamar
     inicializar_bd_central()
-    crear_ruta_prueba()
     
     print("=" * 60)
     print("♻️  PLATAFORMA WEB ADMINISTRATIVA - REDCICLA (TALCA)  ♻️")
