@@ -14,13 +14,12 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     
-    <style>
+<style>
         :root {
-            /* Paleta unificada en base al verde menta del fondo */
-            --color-bg-light: #e6f4e8;       /* El verde menta del fondo general */
-            --color-sidebar-combine: #d8ebd0; /* Un verde menta sutilmente más profundo para combinar */
-            --color-primary-green: #79AE6F;  /* Verde de acento para los hovers */
-            --color-bubble-bg: #ffffff;      /* Blanco para las burbujas de contenido */
+            --color-bg-light: #e6f4e8;       /* Fondo general verde menta */
+            --color-sidebar-combine: #d8ebd0; /* Barra lateral combinada */
+            --color-primary-green: #79AE6F;  /* Verde de acento */
+            --color-bubble-bg: #ffffff;      /* Blanco para las burbujas */
             --color-dark: #000000;
             --color-red: #b21c19;
             
@@ -34,54 +33,52 @@
             background-color: var(--color-bg-light);
             min-height: 100vh;
             color: #1c1c1e;
+            overflow-x: hidden;
         }
 
-        /* Contenedor wrapper con márgenes estilo escritorio */
         .main-wrapper {
             padding: 20px;
             min-height: 100vh;
         }
 
-        /* Sidebar: Ahora combinada con el fondo, sin degradados fuertes */
+        /* Sidebar combinada con micro-sombra */
         .sidebar { 
             background-color: var(--color-sidebar-combine) !important; 
             border-radius: var(--ios-bubble-radius);
-            box-shadow: 0 8px 24px rgba(121, 174, 111, 0.04);
+            box-shadow: 0 8px 32px rgba(121, 174, 111, 0.05);
             border: 1px solid rgba(121, 174, 111, 0.15);
             padding: 25px 15px;
         }
 
-        /* Enlaces de la barra lateral integrados orgánicamente */
         .sidebar a { 
             color: #2c3e29; 
             text-decoration: none; 
             font-weight: 700;
             font-size: 0.95rem;
             border-radius: var(--ios-pill-radius) !important;
-            transition: all 0.2s ease-in-out;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); /* Transición elástica estilo iOS */
         }
 
-        /* Hover estilo iOS: Una burbuja blanca translúcida al pasar el cursor */
         .sidebar a:hover { 
             background-color: rgba(255, 255, 255, 0.4) !important; 
             color: var(--color-dark) !important; 
+            transform: scale(1.02); /* Pequeño relieve al pasar el cursor */
         }
 
-        /* Módulo Activo: Resalta como una burbuja blanca sólida e impecable con fuente cursiva */
         .nav-active { 
             background-color: var(--color-bubble-bg) !important; 
             color: var(--color-dark) !important; 
             font-family: 'Pacifico', cursive;
             font-size: 1.1rem !important;
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.04);
             border: 1px solid rgba(121, 174, 111, 0.1);
         }
         
         .nav-active:hover {
             color: var(--color-dark) !important;
+            transform: none !important;
         }
 
-        /* Color para Gestionar Personal integrado a la paleta */
         .text-warning-custom {
             color: var(--color-red) !important;
         }
@@ -98,7 +95,6 @@
             font-size: 1.8rem;
         }
 
-        /* Botón de Perfil estilo píldora premium */
         .btn-profile {
             border: 1px solid rgba(121, 174, 111, 0.2) !important;
             color: #2c3e29 !important;
@@ -112,17 +108,43 @@
             background-color: var(--color-sidebar-combine);
         }
 
-        /* TRUCO DE ADAPTACIÓN PARA LOS MÓDULOS HIJOS */
-        /* Moldea los contenedores de las subpáginas como burbujas blancas flotantes perfectas */
+        /* MEJORA 1: EFECTO ESMERILADO (GLASSMORPHISM) EN EL CONTENEDOR PRINCIPAL */
+        .glass-panel {
+            background-color: rgba(255, 255, 255, 0.4) !important; 
+            backdrop-filter: blur(20px) saturate(180%); /* Efecto de vidrio de iOS */
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-radius: var(--ios-bubble-radius); 
+            border: 1px solid rgba(255, 255, 255, 0.5); 
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.01);
+        }
+
+        /* MEJORA 2: ANIMACIÓN DE ENTRADA SUAVE PARA LAS BURBUJAS DE CONTENIDO */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         .card, .bg-white {
             background-color: var(--color-bubble-bg) !important;
             border-radius: var(--ios-bubble-radius) !important;
-            border: 1px solid rgba(121, 174, 111, 0.1) !important;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.02) !important;
-            padding: 18px;
+            border: 1px solid rgba(121, 174, 111, 0.08) !important;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.02) !important;
+            padding: 20px;
+            animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; /* Aplica la animación estilo Apple */
         }
 
-        /* Suavizado para tablas internas */
+        /* MEJORA 3: ARMONIZACIÓN DE ICONOS */
+        .bi {
+            font-size: 1.1rem;
+            vertical-align: -1px;
+        }
+
         .table-responsive {
             border-radius: var(--ios-pill-radius);
             overflow: hidden;
