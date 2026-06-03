@@ -83,7 +83,7 @@
                         {% if r[4] == 0 %}
                             Pendiente Acopio
                         {% else %}
-                            {{ (r[4] - r[3]) | round(2) }} kg
+                            {{ r[3] | float | round(2) }} kg
                         {% endif %}
                     </td>
                     <td>

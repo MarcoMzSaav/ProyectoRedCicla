@@ -25,12 +25,10 @@ def login():
 
         conexion = sqlite3.connect(DB_PATH)
         cursor = conexion.cursor()
-        # Ahora traemos la clave_acceso guardada en la base de datos para compararla
         cursor.execute("SELECT nombre_completo, rol, estado, clave_acceso FROM empleados WHERE correo = ?", (correo,))
         usuario = cursor.fetchone()
         conexion.close()
 
-        # check_password_hash hace la magia de comprobar si "jefe123" coincide con el hash guardado
         if usuario and check_password_hash(usuario[3], clave_ingresada):
             nombre, rol, estado, _ = usuario
             if estado == 1:
@@ -57,21 +55,16 @@ def dashboard():
     if 'usuario_nombre' not in session:
         return redirect(url_for('login'))
 
-    try:
-        conexion = sqlite3.connect(DB_PATH)
-        cursor = conexion.cursor()
-        cursor.execute('''
-            SELECT r.punto_id, p.direccion, r.fecha_hora, r.cantidad_retirada, r.estado
-            FROM registros_retiro r
-            JOIN puntos_reciclaje p ON r.punto_id = p.id
-            ORDER BY r.id DESC
-        ''')
-        retiros_db = cursor.fetchall()
-    except Exception as e:
-        retiros_db = []
-    finally:
-        if 'conexion' in locals():
-            conexion.close() 
+    conexion = sqlite3.connect(DB_PATH)
+    cursor = conexion.cursor()
+    cursor.execute('''
+        SELECT r.punto_id, p.direccion, r.fecha_hora, r.cantidad_retirada, r.estado
+        FROM registros_retiro r
+        JOIN puntos_reciclaje p ON r.punto_id = p.id
+        ORDER BY r.id DESC
+    ''')
+    retiros_db = cursor.fetchall()
+    conexion.close()
         
     return render_template('dashboard.html', retiros=retiros_db, nombre=session.get('usuario_nombre'), rol=session.get('usuario_rol'))
 
@@ -90,6 +83,7 @@ def gestionar_usuarios():
     conexion.close()
 
     return render_template('usuarios.html', usuarios=lista_usuarios)
+
 @app.route('/usuarios/crear', methods=['POST'])
 def crear_usuario():
     rol_actual = session.get('usuario_rol')
@@ -100,28 +94,25 @@ def crear_usuario():
     nombre = request.form['nombre']
     correo = request.form['correo']
     telefono = request.form['telefono']
-    clave_plana = request.form['clave']
+    clave = generate_password_hash(request.form['clave'])
     rol_nuevo = request.form['rol']
 
     if rol_actual == 'Administrador' and rol_nuevo in ['Jefe', 'Administrador']:
         return redirect(url_for('gestionar_usuarios'))
 
-    # Transformamos la clave plana a un Hash antes de guardarla
-    clave_hash = generate_password_hash(clave_plana)
-
     try:
         conexion = sqlite3.connect(DB_PATH)
         cursor = conexion.cursor()
         cursor.execute("INSERT INTO empleados (rut, nombre_completo, correo, telefono, clave_acceso, rol, estado) VALUES (?, ?, ?, ?, ?, ?, 1)", 
-                       (rut, nombre, correo, telefono, clave_hash, rol_nuevo))
+                       (rut, nombre, correo, telefono, clave, rol_nuevo))
         conexion.commit()
-    except sqlite3.IntegrityError:
-        print("Error: El correo o RUT ya existe.") 
+    except Exception as e:
+        print(f"Error al crear usuario: {e}")
     finally:
-        if 'conexion' in locals():
-            conexion.close()
+        conexion.close()
     
     return redirect(url_for('gestionar_usuarios'))
+
 @app.route('/usuarios/estado/<int:id_usuario>', methods=['POST'])
 def cambiar_estado_usuario(id_usuario):
     rol_actual = session.get('usuario_rol')
@@ -131,14 +122,11 @@ def cambiar_estado_usuario(id_usuario):
     conexion = sqlite3.connect(DB_PATH)
     cursor = conexion.cursor()
     
-    # Obtener datos del usuario a modificar
     cursor.execute("SELECT rol, estado FROM empleados WHERE id = ?", (id_usuario,))
     usuario_db = cursor.fetchone()
     
     if usuario_db:
         rol_objetivo, estado_actual = usuario_db
-        
-        # 🛡️ SEGURIDAD: Un administrador no puede bloquear a un Jefe ni a otro Admin
         if rol_actual == 'Administrador' and rol_objetivo in ['Jefe', 'Administrador']:
             conexion.close()
             return redirect(url_for('gestionar_usuarios'))
@@ -165,27 +153,22 @@ def editar_usuario(id_usuario):
     conexion = sqlite3.connect(DB_PATH)
     cursor = conexion.cursor()
     
-    # 🛡️ SEGURIDAD: Comprobamos a quién intentan editar
     cursor.execute("SELECT rol FROM empleados WHERE id = ?", (id_usuario,))
-    rol_objetivo = cursor.fetchone()[0]
-
-    # Reglas estrictas:
-    # 1. El Admin no puede editar a Jefes ni a otros Admins.
-    # 2. El Admin no puede ascender a un Conductor para que sea Admin.
-    if rol_actual == 'Administrador':
-        if rol_objetivo in ['Jefe', 'Administrador'] or rol_nuevo in ['Jefe', 'Administrador']:
+    res = cursor.fetchone()
+    if res:
+        rol_objetivo = res[0]
+        if rol_actual == 'Administrador' and (rol_objetivo in ['Jefe', 'Administrador'] or rol_nuevo in ['Jefe', 'Administrador']):
             conexion.close()
             return redirect(url_for('gestionar_usuarios'))
 
-    cursor.execute('''
-        UPDATE empleados 
-        SET rut = ?, nombre_completo = ?, correo = ?, telefono = ?, rol = ? 
-        WHERE id = ?
-    ''', (rut, nombre, correo, telefono, rol_nuevo, id_usuario))
-    
-    conexion.commit()
+        cursor.execute('''
+            UPDATE empleados 
+            SET rut = ?, nombre_completo = ?, correo = ?, telefono = ?, rol = ? 
+            WHERE id = ?
+        ''', (rut, nombre, correo, telefono, rol_nuevo, id_usuario))
+        conexion.commit()
+        
     conexion.close()
-
     return redirect(url_for('gestionar_usuarios'))
 
 # ==========================================
@@ -199,35 +182,22 @@ def gestion_flota():
     conexion = sqlite3.connect(DB_PATH)
     cursor = conexion.cursor()
     
-    # --- CEREBRO AUTOMÁTICO DE ALERTAS (HU-13) ---
-    # 1. Traemos las fechas de revisión de todos los camiones
     cursor.execute("SELECT id, ultima_revision FROM camiones")
     camiones_revision = cursor.fetchall()
-    
     hoy = datetime.now()
     
     for camion in camiones_revision:
-        id_camion = camion[0]
-        fecha_rev_str = camion[1]
-        
+        id_camion, fecha_rev_str = camion
         try:
-            # Convertimos el texto de la base de datos a una Fecha real de Python
             fecha_rev = datetime.strptime(fecha_rev_str, "%Y-%m-%d")
-            # Calculamos cuántos días han pasado
             dias_pasados = (hoy - fecha_rev).days
-            
-            # Si pasaron más de 365 días (1 año), se prende la alerta (1), si no, se apaga (0)
             nueva_alerta = 1 if dias_pasados >= 365 else 0
-            
-            # Actualizamos silenciosamente el camión en la base de datos
             cursor.execute("UPDATE camiones SET alerta = ? WHERE id = ?", (nueva_alerta, id_camion))
-        except Exception as e:
-            pass # Por si un camión tiene la fecha en blanco o mal escrita
+        except Exception:
+            pass 
             
     conexion.commit()
-    # --------------------------------------------
 
-    # 2. Ahora sí, le mandamos los camiones actualizados a la página web
     cursor.execute("SELECT id, patente, capacidad_carga, ultima_revision, estado, alerta FROM camiones ORDER BY patente")
     lista_camiones = cursor.fetchall()
     conexion.close()
@@ -236,8 +206,7 @@ def gestion_flota():
 
 @app.route('/flota/crear', methods=['POST'])
 def crear_camion():
-    if 'usuario_nombre' not in session:
-        return redirect(url_for('login'))
+    if 'usuario_nombre' not in session: return redirect(url_for('login'))
     
     patente = request.form['patente'].upper()
     capacidad = request.form['capacidad']
@@ -249,36 +218,32 @@ def crear_camion():
         cursor.execute("INSERT INTO camiones (patente, capacidad_carga, ultima_revision, estado, alerta) VALUES (?, ?, ?, 1, 0)", 
                        (patente, float(capacidad), revision))
         conexion.commit()
-    except sqlite3.IntegrityError:
-        print("Error: La patente ya está registrada.") 
+    except Exception as e:
+        print(f"Error al crear camión: {e}")
     finally:
-        if 'conexion' in locals():
-            conexion.close()
+        conexion.close()
     
     return redirect(url_for('gestion_flota'))
 
 @app.route('/flota/estado/<int:id_camion>', methods=['POST'])
 def cambiar_estado_camion(id_camion):
-    if 'usuario_nombre' not in session:
-        return redirect(url_for('login'))
+    if 'usuario_nombre' not in session: return redirect(url_for('login'))
 
     conexion = sqlite3.connect(DB_PATH)
     cursor = conexion.cursor()
-    
     cursor.execute("SELECT estado FROM camiones WHERE id = ?", (id_camion,))
-    estado_actual = cursor.fetchone()[0]
-    nuevo_estado = 0 if estado_actual == 1 else 1
-    
-    cursor.execute("UPDATE camiones SET estado = ? WHERE id = ?", (nuevo_estado, id_camion))
-    conexion.commit()
+    res = cursor.fetchone()
+    if res:
+        nuevo_estado = 0 if res[0] == 1 else 1
+        cursor.execute("UPDATE camiones SET estado = ? WHERE id = ?", (nuevo_estado, id_camion))
+        conexion.commit()
     conexion.close()
 
     return redirect(url_for('gestion_flota'))
 
 @app.route('/flota/editar/<int:id_camion>', methods=['POST'])
 def editar_camion(id_camion):
-    if 'usuario_nombre' not in session:
-        return redirect(url_for('login'))
+    if 'usuario_nombre' not in session: return redirect(url_for('login'))
     
     patente = request.form['patente'].upper()
     capacidad = request.form['capacidad']
@@ -297,7 +262,7 @@ def editar_camion(id_camion):
     return redirect(url_for('gestion_flota'))
 
 # ==========================================
-# 5. PÁGINAS EN CONSTRUCCIÓN (Navegación)
+# 5. PUNTOS LIMPIOS Y REPORTE CO2
 # ==========================================
 @app.route('/puntos')
 def puntos_limpios():
@@ -306,11 +271,6 @@ def puntos_limpios():
 
     conexion = sqlite3.connect(DB_PATH)
     cursor = conexion.cursor()
-
-    cursor.execute("UPDATE puntos_reciclaje SET latitud = -35.4264, longitud = -71.6554 WHERE id = 101 AND latitud IS NULL") # Talca
-    cursor.execute("UPDATE puntos_reciclaje SET latitud = -35.5333, longitud = -71.4833 WHERE id = 105 AND latitud IS NULL") # San Clemente
-    conexion.commit()
-
     cursor.execute("SELECT id, direccion, latitud, longitud, estado FROM puntos_reciclaje ORDER BY id")
     lista_puntos = cursor.fetchall()
     conexion.close()
@@ -319,8 +279,7 @@ def puntos_limpios():
 
 @app.route('/puntos/agregar', methods=['POST'])
 def agregar_punto():
-    if 'usuario_nombre' not in session:
-        return redirect(url_for('login'))
+    if 'usuario_nombre' not in session: return redirect(url_for('login'))
         
     direccion = request.form['direccion']
     latitud = request.form['latitud']
@@ -338,11 +297,9 @@ def agregar_punto():
         
     return redirect(url_for('puntos_limpios'))
 
-# EDICIÓN DE PUNTOS
 @app.route('/puntos/editar/<int:id_punto>', methods=['POST'])
 def editar_punto(id_punto):
-    if 'usuario_nombre' not in session:
-        return redirect(url_for('login'))
+    if 'usuario_nombre' not in session: return redirect(url_for('login'))
     
     direccion = request.form['direccion']
     latitud = request.form['latitud']
@@ -359,22 +316,17 @@ def editar_punto(id_punto):
     conexion.close()
     return redirect(url_for('puntos_limpios'))
 
-# DESHABILITAR/HABILITAR PUNTOS
 @app.route('/puntos/estado/<int:id_punto>', methods=['POST'])
 def cambiar_estado_punto(id_punto):
-    if 'usuario_nombre' not in session:
-        return redirect(url_for('login'))
+    if 'usuario_nombre' not in session: return redirect(url_for('login'))
 
     conexion = sqlite3.connect(DB_PATH)
     cursor = conexion.cursor()
-    
-    # Obtenemos el estado actual
     cursor.execute("SELECT estado FROM puntos_reciclaje WHERE id = ?", (id_punto,))
     res = cursor.fetchone()
     
     if res:
-        estado_actual = res[0]
-        nuevo_estado = 0 if estado_actual == 1 else 1 # Si es 1, pasa a 0; si es 0, pasa a 1
+        nuevo_estado = 0 if res[0] == 1 else 1
         cursor.execute("UPDATE puntos_reciclaje SET estado = ? WHERE id = ?", (nuevo_estado, id_punto))
         conexion.commit()
     
@@ -383,12 +335,11 @@ def cambiar_estado_punto(id_punto):
 
 @app.route('/reporte-co2')
 def reporte_co2():
-    if 'usuario_nombre' not in session:
-        return redirect(url_for('login'))
+    if 'usuario_nombre' not in session: return redirect(url_for('login'))
     return render_template('construccion.html', titulo="Reporte de Huella de CO2")
 
 # ==========================================
-# 6. API DE SINCRONIZACIÓN MÓVIL
+# 6. API MÓVIL
 # ==========================================
 @app.route('/api/sincronizar', methods=['POST'])
 def sincronizar_datos():
