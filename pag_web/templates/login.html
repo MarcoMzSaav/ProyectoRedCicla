@@ -4,68 +4,183 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iniciar Sesión - RedCicla</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     
     <style>
+        :root {
+            --color-primary-green: #79AE6F;
+            --color-light-green: #9fcb98;
+            --color-dark: #000000;
+            --color-red: #b21c19;
+            --color-beige: #eacd96;
+        }
+
         body {
-            background-color: #f4f7f6; /* Un gris/verde muy suave de fondo */
+            /* Degradado de fondo según la paleta de la imagen */
+            background: linear-gradient(135deg, var(--color-beige) 0%, #bcecc2 100%);
             height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-family: 'Quicksand', sans-serif;
         }
+
         .login-card {
-            max-width: 400px;
+            max-width: 450px;
             width: 100%;
-            border-radius: 15px;
+            /* Bordes muy redondeados como el contenedor blanco de la imagen */
+            border-radius: 30px; 
+            background-color: #ffffff;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
         }
-        .logo-placeholder {
-            font-size: 4rem;
-            color: #198754; /* Verde Bootstrap */
+
+        /* Título principal con estilo cursiva similar al de la imagen */
+        .brand-title {
+            font-family: 'Pacifico', cursive;
+            color: var(--color-dark);
+            font-size: 2.2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Estilización de los inputs para que luzcan verdes y limpios */
+        .custom-input {
+            background-color: var(--color-light-green) !important;
+            border: none !important;
+            border-radius: 12px !important;
+            color: var(--color-dark) !important;
+            font-weight: 600;
+            padding: 12px 15px;
+        }
+
+        .custom-input::placeholder {
+            color: rgba(0, 0, 0, 0.6);
+            font-family: 'Pacifico', cursive; /* Imita el texto placeholder estilizado */
+            font-size: 0.95rem;
+        }
+
+        /* Grupo de inputs para mantener los iconos integrados sin romper el diseño */
+        .input-group-custom {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-group-custom .form-control {
+            padding-right: 45px;
+        }
+
+        .btn-eye-inside {
+            position: absolute;
+            right: 10px;
+            z-index: 10;
+            background: none;
+            border: none;
+            color: rgba(0, 0, 0, 0.5);
+        }
+
+        /* Botón de Ingreso principal */
+        .btn-ingresar {
+            background-color: var(--color-primary-green) !important;
+            border: none !important;
+            border-radius: 12px !important;
+            color: #ffffff !important;
+            font-family: 'Pacifico', cursive;
+            font-size: 1.3rem;
+            padding: 10px;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn-ingresar:hover {
+            background-color: #65965c !important;
+        }
+
+        /* Checkbox personalizado "Recuérdame" */
+        .form-check-input:checked {
+            background-color: var(--color-light-green);
+            border-color: var(--color-light-green);
+        }
+        
+        .label-recuerdame {
+            font-family: 'Pacifico', cursive;
+            color: var(--color-dark);
+            font-size: 1.1rem;
+        }
+
+        /* Enlace Crear Cuenta */
+        .link-crear-cuenta {
+            font-family: 'Pacifico', cursive;
+            color: var(--color-light-green);
+            text-decoration: none;
+            font-size: 1.2rem;
+            transition: color 0.3s ease;
+        }
+
+        .link-crear-cuenta:hover {
+            color: var(--color-primary-green);
+        }
+
+        .sub-panel-text {
+            color: var(--color-red);
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin-top: 5px;
         }
     </style>
 </head>
 <body>
 
-    <div class="card border-0 shadow-lg login-card p-4">
+    <div class="card border-0 login-card p-4 m-3">
         <div class="card-body text-center">
             
-            <div class="mb-4">
-                <img src="{{ url_for('static', filename='images/LOGO_TEXTO_BELOW.png') }}" alt="Logo RedCicla" width="150"> 
-                <h3 class="text-muted small">Panel de Administración de Flota<h3/>
+            <div class="mb-4 d-flex flex-column align-items-center">
+                <img src="{{ url_for('static', filename='images/LOGO_TEXTO_BELOW.png') }}" alt="Logo RedCicla" width="120" class="img-fluid"> 
+                <span class="small sub-panel-text">PANEL DE ADMINISTRACIÓN</span>
             </div>
 
             {% if error %}
-            <div class="alert alert-danger py-2 small fw-bold" role="alert">
+            <div class="alert alert-danger py-2 small fw-bold mb-3" role="alert">
                 <i class="bi bi-exclamation-octagon-fill"></i> {{ error }}
             </div>
             {% endif %}
 
+            <h2 class="brand-title">Inicia sesión</h2>
+
             <form action="/login" method="POST" class="text-start">
                 
                 <div class="mb-3">
-                    <label class="form-label fw-bold text-secondary small">Correo Electrónico</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-white"><i class="bi bi-person"></i></span>
-                        <input type="email" name="correo" class="form-control" required placeholder="ejemplo@redcicla.cl">
+                    <div class="input-group-custom">
+                        <input type="email" name="correo" class="form-control custom-input" required placeholder="Correo electronico">
                     </div>
                 </div>
 
-                <div class="mb-4">
-                    <label class="form-label fw-bold text-secondary small">Contraseña</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-white"><i class="bi bi-lock"></i></span>
-                        <input type="password" id="clave" name="clave" class="form-control" required placeholder="••••••••">
-                        <button class="btn btn-outline-secondary" type="button" id="btn-ojito" title="Mostrar/Ocultar contraseña">
-                            <i class="bi bi-eye" id="icono-ojito"></i>
+                <div class="mb-3">
+                    <div class="input-group-custom">
+                        <input type="password" id="clave" name="clave" class="form-control custom-input" required placeholder="Contraseña">
+                        <button class="btn-eye-inside" type="button" id="btn-ojito" title="Mostrar/Ocultar contraseña">
+                            <i class="bi bi-eye-fill" id="icono-ojito"></i>
                         </button>
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-success w-100 fw-bold py-2">
-                    Ingresar al Sistema <i class="bi bi-box-arrow-in-right"></i>
+                <div class="form-check mb-4 d-flex align-items-center gap-2">
+                    <input class="form-check-input custom-checkbox" type="checkbox" id="recuerdame">
+                    <label class="form-check-label label-recuerdame" for="recuerdame">
+                        Recuerdame
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-ingresar w-100 mb-3">
+                    Ingresar
                 </button>
+
+                <div class="text-center mt-3">
+                    <a href="#" class="link-crear-cuenta">Crear cuenta</a>
+                </div>
             </form>
             
         </div>
@@ -77,13 +192,12 @@
         const iconoOjito = document.getElementById('icono-ojito');
 
         btnOjito.addEventListener('click', function () {
-            // Verifica si el tipo actual es 'password' y lo cambia a 'text' o viceversa
             const esPassword = inputClave.getAttribute('type') === 'password';
             inputClave.setAttribute('type', esPassword ? 'text' : 'password');
             
-            // Cambia el icono de ojo abierto a ojo tachado
-            iconoOjito.classList.toggle('bi-eye');
-            iconoOjito.classList.toggle('bi-eye-slash');
+            // Alterna los iconos de Bootstrap para diseño relleno
+            iconoOjito.classList.toggle('bi-eye-fill');
+            iconoOjito.classList.toggle('bi-eye-slash-fill');
         });
     </script>
 </body>

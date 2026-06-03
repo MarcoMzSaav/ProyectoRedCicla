@@ -104,5 +104,43 @@ def inicializar_bd_central():
     conexion.close()
     print("✅ MEGA Base de Datos inicializada y poblada con todas las tablas correctas.")
 
+def crear_ruta_prueba():
+    conexion = sqlite3.connect(DB_PATH)
+    cursor = conexion.cursor()
+    
+    # 1. Aseguramos que existan datos maestros
+    cursor.execute("INSERT OR IGNORE INTO zonas (id, nombre) VALUES (1, 'Talca Centro')")
+    cursor.execute("INSERT OR IGNORE INTO rutas (id, zona_id, nombre) VALUES (1, 1, 'Ruta Norte-1')")
+    cursor.execute("INSERT OR IGNORE INTO camiones (id, patente, capacidad_carga, estado, alerta) VALUES (1, 'ABCD-12', 5000, 1, 0)")
+    
+    # 2. Aseguramos puntos de reciclaje para esa ruta
+    cursor.execute("INSERT OR IGNORE INTO puntos_reciclaje (id, ruta_id, zona_id, direccion, capacidad, estado) VALUES (201, 1, 1, 'Calle 1 Oriente #123, Talca', 1000.0, 1)")
+    cursor.execute("INSERT OR IGNORE INTO puntos_reciclaje (id, ruta_id, zona_id, direccion, capacidad, estado) VALUES (202, 1, 1, 'Av. San Miguel #456, Talca', 800.0, 1)")
+    
+    # 3. Buscamos el ID real de Juan en la tabla empleados
+    cursor.execute("SELECT id FROM empleados WHERE correo = 'juan@redcicla.cl'")
+    juan = cursor.fetchone()
+    
+    if juan:
+        juan_id = juan[0]
+        # 4. Verificamos si Juan ya tiene una ruta activa para no duplicar
+        cursor.execute("SELECT id FROM rutas_activas WHERE conductor_id = ? AND fecha_fin IS NULL", (juan_id,))
+        existe = cursor.fetchone()
+        
+        if not existe:
+            from datetime import datetime
+            fecha_hoy = datetime.now().strftime("%Y-%m-%d %H:%M")
+            cursor.execute('''
+                INSERT INTO rutas_activas (ruta_id, camion_id, conductor_id, fecha_inicio)
+                VALUES (1, 1, ?, ?)
+            ''', (juan_id, fecha_hoy))
+            print(f"✅ Ruta activa asignada exitosamente a Juan (ID: {juan_id})")
+        else:
+            print(f"ℹ️ Juan (ID: {juan_id}) ya tiene una ruta activa asignada.")
+    
+    conexion.commit()
+    conexion.close()
+
 if __name__ == '__main__':
     inicializar_bd_central()
+    crear_ruta_prueba()
