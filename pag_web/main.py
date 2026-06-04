@@ -507,6 +507,23 @@ def api_get_puntos():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
+@app.route('/api/puntos/reportar_problema', methods=['POST'])
+def api_reportar_punto():
+    try:
+        datos = request.get_json()
+        punto_id = datos.get('punto_id')
+        
+        conexion = sqlite3.connect(DB_PATH)
+        cursor = conexion.cursor()
+        # Cambiamos el estado a 0 para indicar un problema/inactivación
+        cursor.execute("UPDATE puntos_reciclaje SET estado = 0 WHERE id = ?", (punto_id,))
+        conexion.commit()
+        conexion.close()
+        
+        return jsonify({"status": "success", "message": "Problema reportado"}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 @app.route('/api/sincronizar', methods=['POST'])
 def sincronizar_datos():
     conexion = None

@@ -68,25 +68,50 @@ public class ConexionSQLite extends SQLiteOpenHelper {
     }
 
     /**
-     * Guarda un pesaje de vidrio de forma 100% offline.
+     * Guarda un pesaje de vidrio de forma offline. 
+     * Si ya existe un registro no sincronizado para ese punto en esa ruta, suma la cantidad.
      */
     public boolean guardarPesajeOffline(int rutaActivaId, int puntoId, float kgVidrio, String fecha, String imgAntes, String imgDespues) {
         SQLiteDatabase db = this.getWritableDatabase();
+        
+        // 1. Buscamos si ya existe un registro pendiente para este punto en esta ruta
+        Cursor cursor = db.rawQuery("SELECT id, cantidad_retirada FROM registros_retiro WHERE ruta_activa_id = ? AND punto_id = ? AND sincronizado = 0", 
+                new String[]{String.valueOf(rutaActivaId), String.valueOf(puntoId)});
+
+        boolean exito;
         ContentValues valores = new ContentValues();
 
-        valores.put("ruta_activa_id", rutaActivaId);
-        valores.put("punto_id", puntoId);
-        valores.put("cantidad_retirada", kgVidrio);
-        valores.put("fecha_hora", fecha);
-        valores.put("ruta_img_antes", imgAntes);
-        valores.put("ruta_img_despues", imgDespues);
-        valores.put("estado", "Pendiente");
-        valores.put("sincronizado", 0);
+        if (cursor.moveToFirst()) {
+            // 2. Si existe, sumamos la cantidad y actualizamos las fotos si se enviaron nuevas
+            int idExistente = cursor.getInt(0);
+            float cantidadExistente = cursor.getFloat(1);
+            float nuevaCantidad = cantidadExistente + kgVidrio;
 
-        long resultado = db.insert("registros_retiro", null, valores);
+            valores.put("cantidad_retirada", nuevaCantidad);
+            valores.put("fecha_hora", fecha); // Actualizamos a la última hora de pesaje
+            if (imgAntes != null) valores.put("ruta_img_antes", imgAntes);
+            if (imgDespues != null) valores.put("ruta_img_despues", imgDespues);
+
+            int filasAfectadas = db.update("registros_retiro", valores, "id = ?", new String[]{String.valueOf(idExistente)});
+            exito = filasAfectadas > 0;
+        } else {
+            // 3. Si no existe, creamos un registro nuevo
+            valores.put("ruta_activa_id", rutaActivaId);
+            valores.put("punto_id", puntoId);
+            valores.put("cantidad_retirada", kgVidrio);
+            valores.put("fecha_hora", fecha);
+            valores.put("ruta_img_antes", imgAntes);
+            valores.put("ruta_img_despues", imgDespues);
+            valores.put("estado", "Pendiente");
+            valores.put("sincronizado", 0);
+
+            long resultado = db.insert("registros_retiro", null, valores);
+            exito = resultado != -1;
+        }
+        
+        cursor.close();
         db.close();
-
-        return resultado != -1;
+        return exito;
     }
 
     /**

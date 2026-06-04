@@ -21,6 +21,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 
 public class SyncManager {
 
@@ -55,111 +56,157 @@ public class SyncManager {
 
     public void login(String correo, String clave, LoginCallback callback) {
         executor.execute(() -> {
-            JsonObject json = new JsonObject();
-            json.addProperty("correo", correo);
-            json.addProperty("clave", clave);
+            try {
+                JsonObject json = new JsonObject();
+                json.addProperty("correo", correo);
+                json.addProperty("clave", clave);
 
-            RequestBody body = RequestBody.create(
-                    gson.toJson(json),
-                    MediaType.parse("application/json; charset=utf-8")
-            );
-
-            Request request = new Request.Builder()
-                    .url(LOGIN_URL)
-                    .post(body)
-                    .build();
-
-            try (Response response = client.newCall(request).execute()) {
-                String responseData = response.body().string();
-                JsonObject responseJson = gson.fromJson(responseData, JsonObject.class);
-
-                new Handler(Looper.getMainLooper()).post(() -> {
-                    if (response.isSuccessful()) {
-                        int id = responseJson.get("id").getAsInt();
-                        String nombre = responseJson.get("nombre").getAsString();
-                        String rol = responseJson.get("rol").getAsString();
-                        callback.onSuccess(id, nombre, rol);
-                    } else {
-                        String error = responseJson.has("message") ? 
-                                responseJson.get("message").getAsString() : "Error en login";
-                        callback.onError(error);
-                    }
-                });
-            } catch (IOException e) {
-                new Handler(Looper.getMainLooper()).post(() -> 
-                    callback.onError("Error de conexión con el servidor")
+                RequestBody body = RequestBody.create(
+                        gson.toJson(json),
+                        MediaType.parse("application/json; charset=utf-8")
                 );
+
+                Request request = new Request.Builder()
+                        .url(LOGIN_URL)
+                        .post(body)
+                        .build();
+
+                try (Response response = client.newCall(request).execute()) {
+                    ResponseBody responseBody = response.body();
+                    String responseData = (responseBody != null) ? responseBody.string() : "{}";
+                    JsonObject responseJson = gson.fromJson(responseData, JsonObject.class);
+
+                    new Handler(Looper.getMainLooper()).post(() -> {
+                        if (response.isSuccessful() && responseJson != null) {
+                            int id = responseJson.get("id").getAsInt();
+                            String nombre = responseJson.get("nombre").getAsString();
+                            String rol = responseJson.get("rol").getAsString();
+                            callback.onSuccess(id, nombre, rol);
+                        } else {
+                            String error = (responseJson != null && responseJson.has("message")) ? 
+                                    responseJson.get("message").getAsString() : "Error en login (" + response.code() + ")";
+                            callback.onError(error);
+                        }
+                    });
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Login error", e);
+                new Handler(Looper.getMainLooper()).post(() -> callback.onError("Error de conexión"));
             }
         });
     }
 
     public void sincronizarDatos() {
         executor.execute(() -> {
-            Cursor cursor = dbHelper.obtenerRegistrosPendientesSincronizar();
-            if (cursor == null || cursor.getCount() == 0) {
-                mostrarToast("No hay datos pendientes para sincronizar");
-                if (cursor != null) cursor.close();
-                return;
-            }
-
-            JsonArray jsonArray = new JsonArray();
-            while (cursor.moveToNext()) {
-                JsonObject obj = new JsonObject();
-                // Usamos los nombres de columna actualizados
-                obj.addProperty("ruta_activa_id", cursor.getInt(cursor.getColumnIndexOrThrow("ruta_activa_id")));
-                obj.addProperty("punto_id", cursor.getInt(cursor.getColumnIndexOrThrow("punto_id")));
-                obj.addProperty("cantidad_retirada", cursor.getFloat(cursor.getColumnIndexOrThrow("cantidad_retirada")));
-                obj.addProperty("fecha_hora", cursor.getString(cursor.getColumnIndexOrThrow("fecha_hora")));
-                obj.addProperty("ruta_img_antes", cursor.getString(cursor.getColumnIndexOrThrow("ruta_img_antes")));
-                obj.addProperty("ruta_img_despues", cursor.getString(cursor.getColumnIndexOrThrow("ruta_img_despues")));
-                jsonArray.add(obj);
-            }
-            cursor.close();
-
-            String jsonPayload = gson.toJson(jsonArray);
-            RequestBody body = RequestBody.create(
-                    jsonPayload,
-                    MediaType.parse("application/json; charset=utf-8")
-            );
-
-            Request request = new Request.Builder()
-                    .url(API_URL)
-                    .post(body)
-                    .build();
-
-            try (Response response = client.newCall(request).execute()) {
-                if (response.isSuccessful()) {
-                    marcarComoSincronizados();
-                    mostrarToast("Sincronización exitosa con Talca");
-                } else {
-                    mostrarToast("Error de servidor: " + response.code());
+            try {
+                Cursor cursor = dbHelper.obtenerRegistrosPendientesSincronizar();
+                if (cursor == null || cursor.getCount() == 0) {
+                    mostrarToast("No hay datos pendientes para sincronizar");
+                    if (cursor != null) cursor.close();
+                    return;
                 }
-            } catch (IOException e) {
-                Log.e(TAG, "Error de red", e);
-                mostrarToast("Error de conexión. Revisa si el servidor Flask está encendido.");
+
+                JsonArray jsonArray = new JsonArray();
+                while (cursor.moveToNext()) {
+                    JsonObject obj = new JsonObject();
+                    obj.addProperty("ruta_activa_id", cursor.getInt(cursor.getColumnIndexOrThrow("ruta_activa_id")));
+                    obj.addProperty("punto_id", cursor.getInt(cursor.getColumnIndexOrThrow("punto_id")));
+                    obj.addProperty("cantidad_retirada", cursor.getFloat(cursor.getColumnIndexOrThrow("cantidad_retirada")));
+                    obj.addProperty("fecha_hora", cursor.getString(cursor.getColumnIndexOrThrow("fecha_hora")));
+                    obj.addProperty("ruta_img_antes", cursor.getString(cursor.getColumnIndexOrThrow("ruta_img_antes")));
+                    obj.addProperty("ruta_img_despues", cursor.getString(cursor.getColumnIndexOrThrow("ruta_img_despues")));
+                    jsonArray.add(obj);
+                }
+                cursor.close();
+
+                RequestBody body = RequestBody.create(
+                        gson.toJson(jsonArray),
+                        MediaType.parse("application/json; charset=utf-8")
+                );
+
+                Request request = new Request.Builder()
+                        .url(API_URL)
+                        .post(body)
+                        .build();
+
+                try (Response response = client.newCall(request).execute()) {
+                    if (response.isSuccessful()) {
+                        marcarComoSincronizados();
+                        mostrarToast("Sincronización exitosa");
+                    } else {
+                        mostrarToast("Error de servidor: " + response.code());
+                    }
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Sync error", e);
+                mostrarToast("Error de conexión durante sincronización");
             }
         });
     }
 
     public void obtenerRutaActiva(int usuarioId, RouteCallback callback) {
         executor.execute(() -> {
-            Request request = new Request.Builder()
-                    .url(BASE_URL + "/api/ruta_activa/" + usuarioId)
-                    .get()
-                    .build();
+            try {
+                Request request = new Request.Builder()
+                        .url(BASE_URL + "/api/ruta_activa/" + usuarioId)
+                        .get()
+                        .build();
 
-            try (Response response = client.newCall(request).execute()) {
-                String responseData = response.body().string();
-                JsonObject json = gson.fromJson(responseData, JsonObject.class);
+                try (Response response = client.newCall(request).execute()) {
+                    ResponseBody responseBody = response.body();
+                    String responseData = (responseBody != null) ? responseBody.string() : "{}";
+                    JsonObject json = gson.fromJson(responseData, JsonObject.class);
 
-                new Handler(Looper.getMainLooper()).post(() -> {
-                    if (response.isSuccessful()) {
-                        callback.onSuccess(json);
-                    } else {
-                        callback.onError(json.get("message").getAsString());
-                    }
-                });
-            } catch (IOException e) {
+                    new Handler(Looper.getMainLooper()).post(() -> {
+                        if (response.isSuccessful() && json != null) {
+                            callback.onSuccess(json);
+                        } else {
+                            String error = (json != null && json.has("message")) ? 
+                                    json.get("message").getAsString() : "Error al obtener ruta";
+                            callback.onError(error);
+                        }
+                    });
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Route fetch error", e);
+                new Handler(Looper.getMainLooper()).post(() -> callback.onError("Error de conexión"));
+            }
+        });
+    }
+
+    public void reportarProblema(int puntoId, RouteCallback callback) {
+        executor.execute(() -> {
+            try {
+                JsonObject jsonBody = new JsonObject();
+                jsonBody.addProperty("punto_id", puntoId);
+
+                RequestBody body = RequestBody.create(
+                        gson.toJson(jsonBody),
+                        MediaType.parse("application/json; charset=utf-8")
+                );
+
+                Request request = new Request.Builder()
+                        .url(BASE_URL + "/api/puntos/reportar_problema")
+                        .post(body)
+                        .build();
+
+                try (Response response = client.newCall(request).execute()) {
+                    ResponseBody responseBody = response.body();
+                    String responseData = (responseBody != null) ? responseBody.string() : "{}";
+                    JsonObject responseJson = gson.fromJson(responseData, JsonObject.class);
+
+                    new Handler(Looper.getMainLooper()).post(() -> {
+                        if (response.isSuccessful() && responseJson != null) {
+                            callback.onSuccess(responseJson);
+                        } else {
+                            String error = (responseJson != null && responseJson.has("message")) ? 
+                                    responseJson.get("message").getAsString() : "Error al reportar";
+                            callback.onError(error);
+                        }
+                    });
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Report error", e);
                 new Handler(Looper.getMainLooper()).post(() -> callback.onError("Error de conexión"));
             }
         });

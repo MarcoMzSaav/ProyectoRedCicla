@@ -74,11 +74,29 @@
                 android:textColor="#346739"
                 android:layout_marginBottom="8dp" />
 
-            <Spinner
-                android:id="@+id/spinnerPuntos"
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="52dp"
-                android:layout_marginBottom="22dp" />
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="22dp">
+
+                <Spinner
+                    android:id="@+id/spinnerPuntos"
+                    android:layout_width="0dp"
+                    android:layout_height="52dp"
+                    android:layout_weight="1" />
+
+                <ImageButton
+                    android:id="@+id/btnReportarProblema"
+                    android:layout_width="45dp"
+                    android:layout_height="45dp"
+                    android:layout_marginStart="8dp"
+                    android:backgroundTint="#D32F2F"
+                    android:src="@android:drawable/ic_dialog_alert"
+                    android:contentDescription="Reportar Problema"
+                    android:elevation="2dp" />
+            </LinearLayout>
 
             <View
                 android:layout_width="match_parent"
@@ -105,7 +123,68 @@
                 android:paddingStart="14dp"
                 android:paddingEnd="14dp"
                 android:backgroundTint="#79AE6F"
-                android:layout_marginBottom="28dp" />
+                android:layout_marginBottom="22dp" />
+
+            <!-- Sección de Fotos -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Fotografías de Respaldo"
+                android:textStyle="bold"
+                android:textSize="15sp"
+                android:textColor="#346739"
+                android:layout_marginBottom="12dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="22dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+                    <Button
+                        android:id="@+id/btnFotoAntes"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Antes"
+                        android:backgroundTint="#79AE6F"
+                        android:textSize="12sp" />
+                    <TextView
+                        android:id="@+id/txtStatusAntes"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Sin foto"
+                        android:textSize="11sp"
+                        android:textColor="#999999" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+                    <Button
+                        android:id="@+id/btnFotoDespues"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Después"
+                        android:backgroundTint="#79AE6F"
+                        android:textSize="12sp" />
+                    <TextView
+                        android:id="@+id/txtStatusDespues"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Sin foto"
+                        android:textSize="11sp"
+                        android:textColor="#999999" />
+                </LinearLayout>
+            </LinearLayout>
 
             <Button
                 android:id="@+id/btnGuardarRetiro"
