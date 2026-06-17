@@ -9,11 +9,26 @@ from database_central import inicializar_bd_central, crear_ruta_prueba
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, 'redcicla_central.db')
+def asegurar_columna_capacidad():
+    conexion = sqlite3.connect(DB_PATH, timeout=30)
+    cursor = conexion.cursor()
+    cursor.execute("PRAGMA busy_timeout = 30000")
+
+    cursor.execute("PRAGMA table_info(puntos_reciclaje)")
+    columnas = [columna[1] for columna in cursor.fetchall()]
+
+    if "capacidad" not in columnas:
+        cursor.execute("ALTER TABLE puntos_reciclaje ADD COLUMN capacidad REAL DEFAULT 0")
+        conexion.commit()
+        print("Columna capacidad agregada a puntos_reciclaje")
+
+    conexion.close()
 
 app = Flask(__name__)
 app.secret_key = 'redcicla_clave_super_secreta_2026'
 try:
     inicializar_bd_central()
+    asegurar_columna_capacidad()
     crear_ruta_prueba()
 except Exception as e:
     print(f"Error inicializando base de datos: {e}")
