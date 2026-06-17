@@ -12,6 +12,11 @@ DB_PATH = os.path.join(BASE_DIR, 'redcicla_central.db')
 
 app = Flask(__name__)
 app.secret_key = 'redcicla_clave_super_secreta_2026'
+try:
+    inicializar_bd_central()
+    crear_ruta_prueba()
+except Exception as e:
+    print(f"Error inicializando base de datos: {e}")
 
 # ==========================================
 # 1. RUTAS DE SESIÓN (LOGIN / LOGOUT)
