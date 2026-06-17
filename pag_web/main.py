@@ -581,7 +581,7 @@ def sincronizar_datos():
             conexion.close()
 
 def abrir_navegador():
-    webbrowser.open_new("http://127.0.0.1:8000/")
+    webbrowser.open_new("https://redcicla.onrender.com")
 
 if __name__ == '__main__':
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -589,8 +589,14 @@ if __name__ == '__main__':
     crear_ruta_prueba()
     
     print("=" * 60)
-    print("♻️  PLATAFORMA WEB ADMINISTRATIVA - REDCICLA (TALCA)  ♻️")
+    print("♻️  PLATAFORMA WEB ADMINISTRATIVA - REDCICLA  ♻️")
     print("=" * 60)
-    
+    print("WEB OFICIAL CONECTADA A LA APP:")
+    print("https://redcicla.onrender.com")
+    print("")
+    print("IMPORTANTE: http://127.0.0.1:8000 es solo desarrollo local.")
+    print("Para crear usuarios que funcionen en la app móvil, usar Render.")
+    print("=" * 60)
+        
     Timer(1.5, abrir_navegador).start()
     app.run(debug=True, port=8000, use_reloader=False)
