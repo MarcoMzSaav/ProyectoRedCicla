@@ -119,8 +119,9 @@ def crear_usuario():
     clave_hash = generate_password_hash(clave_plana)
 
     try:
-        conexion = sqlite3.connect(DB_PATH)
+        conexion = sqlite3.connect(DB_PATH, timeout=30)
         cursor = conexion.cursor()
+        cursor.execute("PRAGMA busy_timeout = 30000")
         cursor.execute("INSERT INTO empleados (rut, nombre_completo, correo, telefono, clave_acceso, rol, estado) VALUES (?, ?, ?, ?, ?, ?, 1)", 
                        (rut, nombre, correo, telefono, clave_hash, rol_nuevo))
         conexion.commit()
