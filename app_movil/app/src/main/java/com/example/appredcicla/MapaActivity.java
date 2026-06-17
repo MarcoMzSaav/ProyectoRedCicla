@@ -27,7 +27,7 @@ public class MapaActivity extends AppCompatActivity {
 
         webViewMapa.setWebViewClient(new WebViewClient());
 
-        webViewMapa.loadUrl("http://10.0.2.2:8000/mapa_movil");
+        webViewMapa.loadUrl("https://redcicla.onrender.com");
 
         btnIrRetiro.setOnClickListener(v -> finish());
     }

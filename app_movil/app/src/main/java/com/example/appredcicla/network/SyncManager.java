@@ -26,7 +26,7 @@ import okhttp3.ResponseBody;
 public class SyncManager {
 
     private static final String TAG = "SyncManager";
-    private static final String BASE_URL = "http://10.0.2.2:8000";
+    private static final String BASE_URL = "https://redcicla.onrender.com";
     private static final String API_URL = BASE_URL + "/api/sincronizar";
     private static final String LOGIN_URL = BASE_URL + "/api/login";
 
