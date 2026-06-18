@@ -5,8 +5,7 @@
     <div class="col-md-4">
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-success text-white fw-bold">
-                <i class="bi bi-person-plus"></i> Registrar Nuaaaaaaaaaaaaaaevo Usuario
-                
+                <i class="bi bi-person-plus"></i> Registrar Nuevo Usuario
             </div>
             <div class="card-body bg-white">
                 <form action="/usuarios/crear" method="POST">
@@ -97,7 +96,49 @@
                                             <button type="submit" class="btn btn-sm btn-outline-success" title="Activar">Reactivar</button>
                                         {% endif %}
                                     </form>
-                                {% else %}
+
+                                    <div class="modal fade" id="modalEditarUsuario{{ u[0] }}" tabindex="-1" aria-hidden="true">
+                                      <div class="modal-dialog">
+                                        <div class="modal-content">
+                                          <div class="modal-header bg-warning">
+                                            <h5 class="modal-title fw-bold text-dark"><i class="bi bi-person-lines-fill"></i> Editar Usuario</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                          </div>
+                                          <div class="modal-body text-start">
+                                            <form action="/usuarios/editar/{{ u[0] }}" method="POST">
+                                                <div class="mb-3">
+                                                    <label class="form-label small text-muted fw-bold">RUT</label>
+                                                    <input type="text" name="rut" class="form-control" value="{{ u[1] }}" required>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label small text-muted fw-bold">Nombre Completo</label>
+                                                    <input type="text" name="nombre" class="form-control" value="{{ u[2] }}" required>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label small text-muted fw-bold">Correo</label>
+                                                    <input type="email" name="correo" class="form-control" value="{{ u[3] }}" required>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label small text-muted fw-bold">Teléfono</label>
+                                                    <input type="text" name="telefono" class="form-control" value="{{ u[4] }}" required>
+                                                </div>
+                                                <div class="mb-4">
+                                                    <label class="form-label small text-muted fw-bold">Rol Operativo</label>
+                                                    <select name="rol" class="form-select" required>
+                                                        <option value="Conductor" {% if u[5] == 'Conductor' %}selected{% endif %}>Conductor</option>
+                                                        <option value="Ayudante" {% if u[5] == 'Ayudante' %}selected{% endif %}>Ayudante</option>
+                                                        {% if rol_sesion == 'Jefe' %}
+                                                            <option value="Administrador" {% if u[5] == 'Administrador' %}selected{% endif %}>Administrador</option>
+                                                        {% endif %}
+                                                    </select>
+                                                </div>
+                                                <button type="submit" class="btn btn-warning w-100 fw-bold">Actualizar Datos</button>
+                                            </form>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    {% else %}
                                     <span class="text-muted small"><i class="bi bi-shield-lock"></i> Protegido</span>
                                 {% endif %}
                             </td>
@@ -109,66 +150,4 @@
         </div>
     </div>
 </div>
-{% endblock %}
-
-
-{% block modales %}
-    {% for u in usuarios %}
-        {% set rol_sesion = session.get('usuario_rol') %}
-        {% set rol_fila = u[5] %}
-        
-        {% if (rol_sesion == 'Jefe' and rol_fila != 'Jefe') or (rol_sesion == 'Administrador' and rol_fila in ['Conductor', 'Ayudante']) %}
-        <div class="modal fade" id="modalEditarUsuario{{ u[0] }}" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header bg-warning">
-                        <h5 class="modal-title fw-bold text-dark"><i class="bi bi-person-lines-fill"></i> Editar Usuario</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body text-start">
-                        <form action="/usuarios/editar/{{ u[0] }}" method="POST">
-                            <div class="mb-3">
-                                <label class="form-label small text-muted fw-bold">RUT</label>
-                                <input type="text" name="rut" class="form-control" value="{{ u[1] }}" required>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label small text-muted fw-bold">Nombre Completo</label>
-                                <input type="text" name="nombre" class="form-control" value="{{ u[2] }}" required>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label small text-muted fw-bold">Correo</label>
-                                <input type="email" name="correo" class="form-control" value="{{ u[3] }}" required>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label small text-muted fw-bold">Teléfono</label>
-                                <input type="text" name="telefono" class="form-control" value="{{ u[4] }}" required>
-                            </div>
-                            <div class="mb-4">
-                                <label class="form-label small text-muted fw-bold">Rol Operativo</label>
-                                <select name="rol" class="form-select" required>
-                                    <option value="Conductor" {% if u[5] == 'Conductor' %}selected{% endif %}>Conductor</option>
-                                    <option value="Ayudante" {% if u[5] == 'Ayudante' %}selected{% endif %}>Ayudante</option>
-                                    {% if rol_sesion == 'Jefe' %}
-                                        <option value="Administrador" {% if u[5] == 'Administrador' %}selected{% endif %}>Administrador</option>
-                                    {% endif %}
-                                </select>
-                            </div>
-                            <button type="submit" class="btn btn-warning w-100 fw-bold">Actualizar Datos</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-    {% endfor %}
-    <style>
-    /* Forzamos a la pantalla oscura a quedarse abajo */
-    .modal-backdrop {
-        z-index: 1040 !important;
-    }
-    /* Forzamos a la ventana blanca a subir al máximo nivel */
-    .modal {
-        z-index: 1055 !important;
-    }
-</style>
 {% endblock %}
