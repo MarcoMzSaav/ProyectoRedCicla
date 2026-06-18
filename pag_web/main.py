@@ -321,6 +321,32 @@ def puntos_limpios():
 
     return render_template('puntos.html', puntos=lista_puntos)
 
+@app.route('/mapa_movil')
+def mapa_movil():
+    conexion = sqlite3.connect(DB_PATH)
+    cursor = conexion.cursor()
+
+    cursor.execute("""
+        SELECT id, direccion, latitud, longitud
+        FROM puntos_reciclaje
+        WHERE estado = 1
+    """)
+
+    filas = cursor.fetchall()
+    conexion.close()
+
+    puntos = [
+        {
+            "id": fila[0],
+            "direccion": fila[1],
+            "latitud": fila[2],
+            "longitud": fila[3]
+        }
+        for fila in filas
+    ]
+
+    return render_template('mapa_movil.html', puntos=puntos)
+
 @app.route('/puntos/agregar', methods=['POST'])
 def agregar_punto():
     if 'usuario_nombre' not in session:
