@@ -586,7 +586,7 @@ def abrir_navegador():
 if __name__ == '__main__':
     os.system('cls' if os.name == 'nt' else 'clear')
     inicializar_bd_central()
-    crear_ruta_prueba();
+    crear_ruta_prueba()
     
     print("=" * 60)
     print("♻️  PLATAFORMA WEB ADMINISTRATIVA - REDCICLA  ♻️")
