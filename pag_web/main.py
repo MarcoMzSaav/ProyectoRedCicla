@@ -9,29 +9,9 @@ from database_central import inicializar_bd_central, crear_ruta_prueba
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, 'redcicla_central.db')
-def asegurar_columna_capacidad():
-    conexion = sqlite3.connect(DB_PATH, timeout=30)
-    cursor = conexion.cursor()
-    cursor.execute("PRAGMA busy_timeout = 30000")
-
-    cursor.execute("PRAGMA table_info(puntos_reciclaje)")
-    columnas = [columna[1] for columna in cursor.fetchall()]
-
-    if "capacidad" not in columnas:
-        cursor.execute("ALTER TABLE puntos_reciclaje ADD COLUMN capacidad REAL DEFAULT 0")
-        conexion.commit()
-        print("Columna capacidad agregada a puntos_reciclaje")
-
-    conexion.close()
 
 app = Flask(__name__)
 app.secret_key = 'redcicla_clave_super_secreta_2026'
-try:
-    inicializar_bd_central()
-    asegurar_columna_capacidad()
-    crear_ruta_prueba()
-except Exception as e:
-    print(f"Error inicializando base de datos: {e}")
 
 # ==========================================
 # 1. RUTAS DE SESIÓN (LOGIN / LOGOUT)
@@ -134,9 +114,8 @@ def crear_usuario():
     clave_hash = generate_password_hash(clave_plana)
 
     try:
-        conexion = sqlite3.connect(DB_PATH, timeout=30)
+        conexion = sqlite3.connect(DB_PATH)
         cursor = conexion.cursor()
-        cursor.execute("PRAGMA busy_timeout = 30000")
         cursor.execute("INSERT INTO empleados (rut, nombre_completo, correo, telefono, clave_acceso, rol, estado) VALUES (?, ?, ?, ?, ?, ?, 1)", 
                        (rut, nombre, correo, telefono, clave_hash, rol_nuevo))
         conexion.commit()
@@ -342,26 +321,6 @@ def puntos_limpios():
 
     return render_template('puntos.html', puntos=lista_puntos)
 
-@app.route('/mapa_movil')
-def mapa_movil():
-    conexion = sqlite3.connect(DB_PATH)
-    cursor = conexion.cursor()
-    cursor.execute("SELECT id, direccion, latitud, longitud FROM puntos_reciclaje WHERE estado = 1")
-    filas = cursor.fetchall()
-    conexion.close()
-
-    puntos = [
-        {
-            "id": fila[0],
-            "direccion": fila[1],
-            "latitud": fila[2],
-            "longitud": fila[3]
-        }
-        for fila in filas
-    ]
-
-    return render_template('mapa_movil.html', puntos=puntos)
-
 @app.route('/puntos/agregar', methods=['POST'])
 def agregar_punto():
     if 'usuario_nombre' not in session:
@@ -428,9 +387,50 @@ def cambiar_estado_punto(id_punto):
 
 @app.route('/reporte-co2')
 def reporte_co2():
-    if 'usuario_nombre' not in session:
+    if 'usuario_nombre' not in session: 
         return redirect(url_for('login'))
-    return render_template('construccion.html', titulo="Reporte de Huella de CO2")
+
+    conexion = sqlite3.connect(DB_PATH)
+    cursor = conexion.cursor()
+
+    # 1. Obtenemos el total de vidrio recolectado (de los retiros completados)
+    cursor.execute("SELECT SUM(cantidad_retirada) FROM registros_retiro WHERE estado = 'Completado'")
+    total_vidrio = cursor.fetchone()[0]
+    if total_vidrio is None: total_vidrio = 0.0
+
+    # 2. Obtenemos la cantidad de retiros para estimar la distancia recorrida
+    cursor.execute("SELECT COUNT(*) FROM registros_retiro WHERE estado = 'Completado'")
+    total_retiros = cursor.fetchone()[0]
+    if total_retiros is None: total_retiros = 0
+
+    conexion.close()
+
+    # --- HEURÍSTICA DE CÁLCULO DE HUELLA DE CARBONO ---
+    # Asumimos que cada retiro implica unos 12.5 km de recorrido promedio
+    distancia_estimada_km = total_retiros * 12.5 
+    
+    # Un camión diésel pesado emite aprox 1.5 kg de CO2 por kilómetro
+    factor_emision_camion = 1.5 
+    
+    # Reciclar 1 kg de vidrio ahorra aprox 0.31 kg de CO2 (vs fabricar vidrio nuevo)
+    factor_ahorro_vidrio = 0.31 
+
+    co2_emitido = distancia_estimada_km * factor_emision_camion
+    co2_ahorrado = total_vidrio * factor_ahorro_vidrio
+    
+    # Huella Neta (Si es negativa, estamos ayudando al medio ambiente)
+    huella_neta = co2_emitido - co2_ahorrado 
+
+    # Empaquetamos los datos para enviarlos al HTML
+    datos_co2 = {
+        "vidrio": round(total_vidrio, 2),
+        "distancia": round(distancia_estimada_km, 2),
+        "emitido": round(co2_emitido, 2),
+        "ahorrado": round(co2_ahorrado, 2),
+        "neto": round(huella_neta, 2)
+    }
+
+    return render_template('reporte_co2.html', datos=datos_co2)
 
 # ==========================================
 # 6. API DE SINCRONIZACIÓN MÓVIL
@@ -528,23 +528,6 @@ def api_get_puntos():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-@app.route('/api/puntos/reportar_problema', methods=['POST'])
-def api_reportar_punto():
-    try:
-        datos = request.get_json()
-        punto_id = datos.get('punto_id')
-        
-        conexion = sqlite3.connect(DB_PATH)
-        cursor = conexion.cursor()
-        # Cambiamos el estado a 0 para indicar un problema/inactivación
-        cursor.execute("UPDATE puntos_reciclaje SET estado = 0 WHERE id = ?", (punto_id,))
-        conexion.commit()
-        conexion.close()
-        
-        return jsonify({"status": "success", "message": "Problema reportado"}), 200
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
-
 @app.route('/api/sincronizar', methods=['POST'])
 def sincronizar_datos():
     conexion = None
@@ -581,22 +564,15 @@ def sincronizar_datos():
             conexion.close()
 
 def abrir_navegador():
-    webbrowser.open_new("https://redcicla.onrender.com")
+    webbrowser.open_new("http://127.0.0.1:8000/")
 
 if __name__ == '__main__':
     os.system('cls' if os.name == 'nt' else 'clear')
     inicializar_bd_central()
-    crear_ruta_prueba()
     
     print("=" * 60)
-    print("♻️  PLATAFORMA WEB ADMINISTRATIVA - REDCICLA  ♻️")
+    print("♻️  PLATAFORMA WEB ADMINISTRATIVA - REDCICLA (TALCA)  ♻️")
     print("=" * 60)
-    print("WEB OFICIAL CONECTADA A LA APP:")
-    print("https://redcicla.onrender.com")
-    print("")
-    print("IMPORTANTE: http://127.0.0.1:8000 es solo desarrollo local.")
-    print("Para crear usuarios que funcionen en la app móvil, usar Render.")
-    print("=" * 60)
-        
+    
     Timer(1.5, abrir_navegador).start()
     app.run(debug=True, port=8000, use_reloader=False)

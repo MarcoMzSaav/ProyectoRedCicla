@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3><i class="bi bi-cloud-arrow-down-fill text-success"></i> Reporte de Huella de Carbono</h3>
+    <button class="btn btn-outline-info fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalExplicacion">
+        <i class="bi bi-info-circle-fill"></i> ¿Cómo se calcula?
+    </button>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm bg-light text-center p-3">
+            <h6 class="text-muted mb-1">Vidrio Recolectado</h6>
+            <h3 class="text-primary mb-0">{{ datos.vidrio }} <small class="fs-6">kg</small></h3>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm bg-light text-center p-3">
+            <h6 class="text-muted mb-1">Distancia Estimada</h6>
+            <h3 class="text-secondary mb-0">{{ datos.distancia }} <small class="fs-6">km</small></h3>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm bg-light text-center p-3 border-bottom border-danger border-4">
+            <h6 class="text-muted mb-1">CO₂ Emitido (Camiones)</h6>
+            <h3 class="text-danger mb-0">{{ datos.emitido }} <small class="fs-6">kg</small></h3>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm bg-light text-center p-3 border-bottom border-success border-4">
+            <h6 class="text-muted mb-1">CO₂ Ahorrado (Reciclaje)</h6>
+            <h3 class="text-success mb-0">{{ datos.ahorrado }} <small class="fs-6">kg</small></h3>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-7">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white fw-bold"><i class="bi bi-pie-chart"></i> Impacto Ambiental</div>
+            <div class="card-body d-flex justify-content-center">
+                <div style="width: 300px;">
+                    <canvas id="graficoCO2" 
+                            data-emitido="{{ datos.emitido }}" 
+                            data-ahorrado="{{ datos.ahorrado }}">
+                    </canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-5">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white fw-bold"><i class="bi bi-calculator"></i> Balance Neto de Emisiones</div>
+            <div class="card-body d-flex flex-column justify-content-center align-items-center text-center">
+                {% if datos.neto > 0 %}
+                    <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+                    <h4 class="mt-2">Impacto Negativo</h4>
+                    <p class="text-muted">Actualmente la flota contamina más de lo que ahorra el reciclaje.</p>
+                    <h1 class="text-danger fw-bold">+{{ datos.neto }} kg CO₂</h1>
+                {% else %}
+                    <i class="bi bi-tree-fill text-success" style="font-size: 3rem;"></i>
+                    <h4 class="mt-2">¡Impacto Positivo!</h4>
+                    <p class="text-muted">El ahorro por reciclaje superó las emisiones de la flota.</p>
+                    <h1 class="text-success fw-bold">{{ datos.neto }} kg CO₂</h1>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalExplicacion" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-info text-white">
+        <h5 class="modal-title"><i class="bi bi-journal-text"></i> Metodología de Cálculo (Heurística)</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>Al no contar con telemetría GPS en tiempo real instalada en los camiones, el sistema <b>RedCicla</b> utiliza un modelo de estimación basado en promedios operativos y factores de emisión estandarizados.</p>
+        
+        <hr>
+        <h6 class="fw-bold text-danger">1. Cálculo de Emisiones (Lo que contaminamos)</h6>
+        <p class="small text-muted mb-1">Se asume una distancia promedio de 12.5 km por cada retiro completado. Un camión diésel de carga pesada emite en promedio 1.5 kg de CO₂ por kilómetro recorrido.</p>
+        <div class="bg-light p-2 text-center font-monospace mb-3 border rounded">
+            Emisiones = (Total Retiros × 12.5 km) × 1.5 kg CO₂
+        </div>
+
+        <h6 class="fw-bold text-success">2. Cálculo de Ahorro (Lo que ayudamos)</h6>
+        <p class="small text-muted mb-1">Fabricar vidrio a partir de material reciclado en lugar de materia prima virgen ahorra aproximadamente 0.31 kg de CO₂ por cada kilogramo de vidrio.</p>
+        <div class="bg-light p-2 text-center font-monospace mb-3 border rounded">
+            Ahorro = Total Vidrio Recolectado (kg) × 0.31 kg CO₂
+        </div>
+
+        <h6 class="fw-bold text-primary">3. Huella de Carbono Neta</h6>
+        <p class="small text-muted mb-1">Es el balance final que determina la eficiencia ecológica de la empresa.</p>
+        <div class="bg-light p-2 text-center font-monospace border rounded">
+            Huella Neta = Emisiones - Ahorro
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Entendido</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const canvas = document.getElementById('graficoCO2');
+        const emitido = parseFloat(canvas.dataset.emitido);
+        const ahorrado = parseFloat(canvas.dataset.ahorrado);
+
+        const ctx = canvas.getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['CO₂ Emitido (Camiones)', 'CO₂ Ahorrado (Reciclaje)'],
+                datasets: [{
+                    data: [emitido, ahorrado],
+                    backgroundColor: ['#dc3545', '#198754'],
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
