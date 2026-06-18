@@ -44,7 +44,7 @@
         .sidebar { 
             background-color: var(--color-sidebar-combine) !important; 
             border-radius: var(--ios-bubble-radius);
-            box-shadow: 0 8px 32px rgba(121, 174, 111, 0.03);
+            box-shadow: 0 8px 32px rgba(121, 174, 111, 0.05);
             border: 1px solid rgba(121, 174, 111, 0.15);
             padding: 25px 15px;
         }
@@ -55,13 +55,13 @@
             font-weight: 700;
             font-size: 0.95rem;
             border-radius: var(--ios-pill-radius) !important;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); /* Transición elástica estilo iOS */
         }
 
         .sidebar a:hover { 
             background-color: rgba(255, 255, 255, 0.4) !important; 
             color: var(--color-dark) !important; 
-            transform: scale(1.02);
+            transform: scale(1.02); /* Pequeño relieve al pasar el cursor */
         }
 
         .nav-active { 
@@ -69,8 +69,8 @@
             color: var(--color-dark) !important; 
             font-family: 'Pacifico', cursive;
             font-size: 1.1rem !important;
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.03);
-            border: 1px solid rgba(121, 174, 111, 0.08);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.04);
+            border: 1px solid rgba(121, 174, 111, 0.1);
         }
         
         .nav-active:hover {
@@ -107,17 +107,17 @@
             background-color: var(--color-sidebar-combine);
         }
 
-        /* EFECTO ESMERILADO (GLASSMORPHISM) EN EL CONTENEDOR PRINCIPAL */
+        /* MEJORA 1: EFECTO ESMERILADO (GLASSMORPHISM) EN EL CONTENEDOR PRINCIPAL */
         .glass-panel {
             background-color: rgba(255, 255, 255, 0.4) !important; 
-            backdrop-filter: blur(20px) saturate(180%) !important; 
-            -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+            backdrop-filter: blur(20px) saturate(180%); /* Efecto de vidrio de iOS */
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
             border-radius: var(--ios-bubble-radius); 
             border: 1px solid rgba(255, 255, 255, 0.5); 
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.01);
         }
 
-        /* ANIMACIÓN DE ENTRADA SUAVE */
+        /* MEJORA 2: ANIMACIÓN DE ENTRADA SUAVE PARA LAS BURBUJAS DE CONTENIDO */
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -135,9 +135,10 @@
             border: 1px solid rgba(121, 174, 111, 0.08) !important;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.02) !important;
             padding: 20px;
-            animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+            animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; /* Aplica la animación estilo Apple */
         }
 
+        /* MEJORA 3: ARMONIZACIÓN DE ICONOS */
         .bi {
             font-size: 1.1rem;
             vertical-align: -1px;
@@ -155,12 +156,11 @@
             --bs-table-bg: #f4f9f3 !important;
             --bs-table-color: #2c3e29 !important;
         }
-
         /* =======================================================
            ELIMINACIÓN RADICAL DE LA CAPA OSCURA (ANTI-BUG ADRENALINA)
-           ======================================================= */
-        
-        /* Ocultamos y desactivamos físicamente el telón negro de Bootstrap */
+           ======================================================= /
+
+        / Ocultamos y desactivamos físicamente el telón negro de Bootstrap /
         .modal-backdrop {
             display: none !important;
             visibility: hidden !important;
@@ -169,13 +169,13 @@
             height: 0 !important;
         }
 
-        /* Hacemos que el modal flote arriba de forma limpia sin oscurecer nada */
+        / Hacemos que el modal flote arriba de forma limpia sin oscurecer nada /
         .modal {
             z-index: 1060 !important;
-            background-color: rgba(0, 0, 0, 0.0) !important; /* Totalmente transparente */
+            background-color: rgba(0, 0, 0, 0.0) !important; / Totalmente transparente /
         }
 
-        /* Mantenemos el scroll del body habilitado si se abre la edición */
+        / Mantenemos el scroll del body habilitado si se abre la edición */
         body.modal-open {
             overflow: auto !important;
             padding-right: 0 !important;
@@ -222,6 +222,16 @@
                             </a>
                         </li>
                         
+                        <li>
+                            <a href="{{ url_for('reportes_terreno') }}" class="nav-link p-3 {% if request.path == '/reportes-terreno' %}nav-active{% endif %}">
+                                <i class="bi bi-card-checklist me-2"></i> Reportes de Terreno
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ url_for('monitoreo_rutas') }}" class="nav-link p-3 {% if request.path == '/monitoreo' %}nav-active{% endif %}">
+                                <i class="bi bi-truck-front-fill me-2"></i> Monitoreo en Vivo
+                            </a>
+                        </li>
                         {% if session.get('usuario_rol') == 'Jefe' or session.get('usuario_rol') == 'Administrador' %}
                             <li>
                                 <a href="/usuarios" class="nav-link p-3 text-warning-custom {% if request.path == '/usuarios' %}nav-active{% endif %}">
@@ -258,7 +268,8 @@
             </div>
 
         </div>
-    </div>
+    </div> {% block modales %}
+    {% endblock %}
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
