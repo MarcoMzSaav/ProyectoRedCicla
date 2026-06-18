@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3><i class="bi bi-truck-front-fill text-warning"></i> Centro de Monitoreo de Flota</h3>
+    <span class="badge bg-danger pulse-animation"><i class="bi bi-record-circle"></i> EN VIVO</span>
+</div>
+
+<div class="row">
+    {% for viaje in viajes %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center border-bottom-0 pt-3">
+                <h5 class="mb-0 fw-bold"><i class="bi bi-truck text-secondary"></i> {{ viaje.patente }}</h5>
+                {% if viaje.fin %}
+                    <span class="badge bg-success">Terminado</span>
+                {% else %}
+                    <span class="badge bg-primary">En Ruta</span>
+                {% endif %}
+            </div>
+            
+            <div class="card-body pb-2">
+                <p class="text-muted small mb-3"><i class="bi bi-map"></i> Ruta: <strong>{{ viaje.ruta }}</strong></p>
+                
+                <div class="d-flex justify-content-between mb-1 small">
+                    <span><i class="bi bi-person-fill"></i> {{ viaje.conductor }}</span>
+                    <span class="text-muted">{{ viaje.recolectado }} kg recogidos</span>
+                </div>
+                
+                <div class="d-flex justify-content-between mb-1 mt-3 small fw-bold">
+                    <span>Avance de Ruta</span>
+                    <span class="text-primary">{{ viaje.puntos_completados }} / {{ viaje.total_puntos }} Puntos</span>
+                </div>
+                <div class="progress mb-3" style="height: 12px;">
+                    <div class="progress-bar {% if viaje.porcentaje == 100 %}bg-success{% else %}bg-primary{% endif %}" 
+                         role="progressbar" style="width: {{ viaje.porcentaje }}%;">
+                         {{ viaje.porcentaje }}%
+                    </div>
+                </div>
+
+                <button class="btn btn-sm btn-outline-secondary w-100 mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePuntos{{ viaje.id }}">
+                    <i class="bi bi-list-check"></i> Ver Contenedores a Visitar
+                </button>
+                
+                <div class="collapse" id="collapsePuntos{{ viaje.id }}">
+                    <ul class="list-group list-group-flush small mb-3 border rounded" style="max-height: 140px; overflow-y: auto;">
+                        {% for punto in viaje.detalle_puntos %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-2 py-1">
+                                <span class="text-truncate" style="max-width: 80%;" title="{{ punto.direccion }}">{{ punto.direccion }}</span>
+                                
+                                {% if punto.estado == 'Completado' %}
+                                    <i class="bi bi-check-circle-fill text-success" title="Recolectado"></i>
+                                {% elif punto.estado %}
+                                    <i class="bi bi-exclamation-circle-fill text-danger" title="Incidencia: {{ punto.estado }}"></i>
+                                {% else %}
+                                    <i class="bi bi-clock text-muted" title="Pendiente de visita"></i>
+                                {% endif %}
+                            </li>
+                        {% else %}
+                            <li class="list-group-item text-muted text-center py-2">No hay puntos registrados en esta ruta.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <div class="row text-center border-top pt-2">
+                    <div class="col-6 border-end">
+                        <small class="text-muted d-block">Hora Salida</small>
+                        <span class="fw-bold"><i class="bi bi-box-arrow-right text-success"></i> {{ viaje.inicio[-5:] }}</span>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted d-block">Hora Llegada</small>
+                        {% if viaje.fin %}
+                            <span class="fw-bold"><i class="bi bi-box-arrow-in-left text-danger"></i> {{ viaje.fin[-5:] }}</span>
+                        {% else %}
+                            <span class="text-muted fst-italic">En curso...</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12 text-center py-5">
+        <i class="bi bi-moon-stars text-muted" style="font-size: 3rem;"></i>
+        <h5 class="text-muted mt-3">No hay camiones en la calle en este momento.</h5>
+    </div>
+    {% endfor %}
+</div>
+
+<style>
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+    .pulse-animation { animation: pulse 2s infinite; }
+</style>
+{% endblock %}

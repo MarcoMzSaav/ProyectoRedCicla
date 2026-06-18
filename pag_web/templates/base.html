@@ -200,6 +200,16 @@
                             </a>
                         </li>
                         
+                        <li>
+                            <a href="{{ url_for('reportes_terreno') }}" class="nav-link p-3 {% if request.path == '/reportes-terreno' %}nav-active{% endif %}">
+                                <i class="bi bi-card-checklist me-2"></i> Reportes de Terreno
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ url_for('monitoreo_rutas') }}" class="nav-link p-3 {% if request.path == '/monitoreo' %}nav-active{% endif %}">
+                                <i class="bi bi-truck-front-fill me-2"></i> Monitoreo en Vivo
+                            </a>
+                        </li>
                         {% if session.get('usuario_rol') == 'Jefe' or session.get('usuario_rol') == 'Administrador' %}
                             <li>
                                 <a href="/usuarios" class="nav-link p-3 text-warning-custom {% if request.path == '/usuarios' %}nav-active{% endif %}">

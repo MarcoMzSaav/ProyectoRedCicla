@@ -432,6 +432,105 @@ def reporte_co2():
 
     return render_template('reporte_co2.html', datos=datos_co2)
 
+
+@app.route('/reportes-terreno')
+def reportes_terreno():
+    if 'usuario_nombre' not in session: 
+        return redirect(url_for('login'))
+
+    conexion = sqlite3.connect(DB_PATH)
+    cursor = conexion.cursor()
+    
+    # Traemos el historial de retiros cruzando datos con los puntos de reciclaje
+    cursor.execute('''
+        SELECT r.id, p.direccion, r.fecha_hora, r.cantidad_retirada, r.estado
+        FROM registros_retiro r
+        JOIN puntos_reciclaje p ON r.punto_id = p.id
+        ORDER BY r.id DESC
+    ''')
+    reportes_db = cursor.fetchall()
+    conexion.close()
+
+    return render_template('reportes_terreno.html', reportes=reportes_db)
+@app.route('/monitoreo')
+def monitoreo_rutas():
+    if 'usuario_nombre' not in session: 
+        return redirect(url_for('login'))
+
+    conexion = sqlite3.connect(DB_PATH)
+    cursor = conexion.cursor()
+    
+    # 1. Traemos los datos básicos del camión en ruta
+    # Consulta corregida con LEFT JOIN para mostrar TODA la flota siempre
+    cursor.execute('''
+        SELECT 
+            ra.id, 
+            c.patente, 
+            c.capacidad_carga, 
+            COALESCE(cond.nombre_completo, 'Conductor Asignado') AS conductor,
+            r.nombre AS ruta_nombre, 
+            ra.fecha_inicio, 
+            ra.fecha_fin, 
+            ra.ruta_id
+        FROM rutas_activas ra
+        LEFT JOIN camiones c ON ra.camion_id = c.id
+        LEFT JOIN empleados cond ON ra.conductor_id = cond.id
+        LEFT JOIN rutas r ON ra.ruta_id = r.id
+        ORDER BY ra.fecha_inicio DESC
+    ''')
+    viajes_db = cursor.fetchall()
+
+    viajes_procesados = []
+    
+    for v in viajes_db:
+        ruta_activa_id = v[0]
+        ruta_id = v[7]
+        
+        # 2. Obtenemos los Kilos recolectados hasta el momento
+        cursor.execute("SELECT SUM(cantidad_retirada) FROM registros_retiro WHERE ruta_activa_id = ? AND estado = 'Completado'", (ruta_activa_id,))
+        recolectado = cursor.fetchone()[0]
+        if recolectado is None: recolectado = 0.0
+        
+        # 3. Obtenemos TODOS los puntos que pertenecen a esta ruta y cruzamos con sus retiros
+        cursor.execute('''
+            SELECT p.id, p.direccion,
+                   (SELECT estado FROM registros_retiro WHERE ruta_activa_id = ? AND punto_id = p.id ORDER BY id DESC LIMIT 1) as estado_retiro
+            FROM puntos_reciclaje p
+            WHERE p.ruta_id = ? AND p.estado = 1
+        ''', (ruta_activa_id, ruta_id))
+        puntos_db = cursor.fetchall()
+        
+        detalle_puntos = []
+        puntos_completados = 0
+        total_puntos = len(puntos_db)
+        
+        for p in puntos_db:
+            estado_punto = p[2]
+            if estado_punto == 'Completado':
+                puntos_completados += 1
+                
+            detalle_puntos.append({
+                "direccion": p[1],
+                "estado": estado_punto
+            })
+            
+        # 4. El porcentaje ahora se calcula 100% en base al trabajo realizado (puntos visitados)
+        porcentaje = 0
+        if total_puntos > 0:
+            porcentaje = int((puntos_completados / total_puntos) * 100)
+        
+        viajes_procesados.append({
+            "id": v[0], "patente": v[1], "capacidad": v[2], "conductor": v[3],
+            "ruta": v[4], "inicio": v[5], "fin": v[6], 
+            "recolectado": round(recolectado, 1),
+            "porcentaje": porcentaje,
+            "puntos_completados": puntos_completados,
+            "total_puntos": total_puntos,
+            "detalle_puntos": detalle_puntos
+        })
+
+    conexion.close()
+    return render_template('monitoreo.html', viajes=viajes_procesados)
 # ==========================================
 # 6. API DE SINCRONIZACIÓN MÓVIL
 # ==========================================
