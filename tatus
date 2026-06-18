@@ -1,0 +1,13 @@
+[33mcommit 88eecee8443b7bc8232dcfd3bd5616d7e3b69bc6[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: Baltazar Espinoza <balta.espinoza@gmail.com>
+Date:   Wed Jun 17 21:25:30 2026 -0400
+
+    ADMIN PAGE: Añadiendo visualizaciones en tiempo real
+
+M	pag_web/main.py
+M	pag_web/redcicla_central.db
+A	pag_web/simular_problemas.py
+A	pag_web/simular_trayectos.py
+M	pag_web/templates/base.html
+A	pag_web/templates/monitoreo.html
+A	pag_web/templates/reportes_terreno.html

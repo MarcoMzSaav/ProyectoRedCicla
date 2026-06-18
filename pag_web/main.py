@@ -663,7 +663,7 @@ def sincronizar_datos():
             conexion.close()
 
 def abrir_navegador():
-    webbrowser.open_new("http://127.0.0.1:8000/")
+    webbrowser.open_new("https://redcicla.onrender.com")
 
 if __name__ == '__main__':
     os.system('cls' if os.name == 'nt' else 'clear')
