@@ -563,6 +563,7 @@ def monitoreo_rutas():
 # ==========================================
 @app.route('/api/login', methods=['POST'])
 def api_login():
+    print(f"🔍 API: Petición de login recibida")
     datos = request.get_json()
     correo = datos.get('correo')
     clave = datos.get('clave')
@@ -579,6 +580,7 @@ def api_login():
             # 🛡️ SEGURIDAD: Solo Conductores y Ayudantes pueden entrar a la App Móvil
             rol_usuario = usuario[2]
             if rol_usuario in ['Conductor', 'Ayudante']:
+                print(f"✅ API: Login exitoso para {usuario[1]} (ID: {usuario[0]})")
                 return jsonify({
                     "status": "success",
                     "id": usuario[0],
@@ -597,6 +599,7 @@ def api_login():
 
 @app.route('/api/ruta_activa/<int:usuario_id>', methods=['GET'])
 def api_ruta_activa(usuario_id):
+    print(f"🔍 API: Petición de ruta activa para usuario ID: {usuario_id}")
     try:
         conexion = sqlite3.connect(DB_PATH)
         cursor = conexion.cursor()
@@ -614,10 +617,12 @@ def api_ruta_activa(usuario_id):
         ruta = cursor.fetchone()
         
         if not ruta:
+            print(f"⚠️ API: No se encontró ruta activa para usuario {usuario_id}")
             conexion.close()
             return jsonify({"status": "error", "message": "No tienes rutas activas asignadas"}), 404
             
         ruta_id_activa = ruta[0]
+        print(f"✅ API: Ruta '{ruta[1]}' encontrada para usuario {usuario_id}")
         
         # Ahora obtenemos los puntos de esa ruta (incluyendo capacidad)
         cursor.execute('''
@@ -628,6 +633,7 @@ def api_ruta_activa(usuario_id):
         ''', (ruta_id_activa,))
         
         puntos = [{"id": row[0], "direccion": row[1], "capacidad": row[2]} for row in cursor.fetchall()]
+        print(f"📍 API: Enviando {len(puntos)} puntos al celular.")
         
         conexion.close()
         
@@ -640,6 +646,7 @@ def api_ruta_activa(usuario_id):
         }), 200
         
     except Exception as e:
+        print(f"❌ API ERROR: {str(e)}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/api/puntos', methods=['GET'])
@@ -690,15 +697,16 @@ def sincronizar_datos():
             conexion.close()
 
 def abrir_navegador():
-    webbrowser.open_new("https://redcicla.onrender.com")
+    webbrowser.open_new("http://127.0.0.1:8000/")
 
 if __name__ == '__main__':
     os.system('cls' if os.name == 'nt' else 'clear')
     inicializar_bd_central()
+    crear_ruta_prueba()
     
     print("=" * 60)
     print("♻️  PLATAFORMA WEB ADMINISTRATIVA - REDCICLA (TALCA)  ♻️")
     print("=" * 60)
     
     Timer(1.5, abrir_navegador).start()
-    app.run(debug=True, port=8000, use_reloader=False)
+    app.run(debug=True, host='0.0.0.0', port=8000, use_reloader=False)

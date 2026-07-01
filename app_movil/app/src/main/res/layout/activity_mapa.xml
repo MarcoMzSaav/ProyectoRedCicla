@@ -9,15 +9,17 @@
         android:id="@+id/txtTituloMapa"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Mapa de Puntos"
+        android:text="Ruta de Recolección Óptima"
         android:textStyle="bold"
         android:textSize="22sp"
         android:textColor="#2F6B3A"
         android:gravity="center"
         android:padding="16dp" />
 
-    <WebView
-        android:id="@+id/webViewMapa"
+    <!-- Fragmento de Google Maps -->
+    <fragment
+        android:id="@+id/map"
+        android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1" />
@@ -36,18 +38,18 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:text="RETIRO"
+            android:text="VOLVER AL REGISTRO"
             android:textStyle="bold"
             android:textColor="#FFFFFF"
             android:backgroundTint="#2F6B3A" />
 
         <Button
-            android:id="@+id/btnMapaActual"
+            android:id="@+id/btnOptimizarRuta"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:layout_marginStart="8dp"
-            android:text="MAPA"
+            android:text="OPTIMIZAR RUTA"
             android:textStyle="bold"
             android:textColor="#FFFFFF"
             android:backgroundTint="#7BAF6F" />

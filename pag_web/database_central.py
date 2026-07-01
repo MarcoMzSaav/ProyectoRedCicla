@@ -30,8 +30,24 @@ def inicializar_bd_central():
 
     cursor.execute('''CREATE TABLE IF NOT EXISTS puntos_reciclaje (
         id INTEGER PRIMARY KEY AUTOINCREMENT, ruta_id INTEGER, zona_id INTEGER, direccion TEXT,
-        latitud REAL, longitud REAL, intervalo_recoleccion INTEGER, fecha_ultima_recoleccion TEXT, estado INTEGER DEFAULT 1,
+        latitud REAL, longitud REAL, capacidad REAL DEFAULT 0.0, intervalo_recoleccion INTEGER, fecha_ultima_recoleccion TEXT, estado INTEGER DEFAULT 1,
         FOREIGN KEY(ruta_id) REFERENCES rutas(id), FOREIGN KEY(zona_id) REFERENCES zonas(id))''')
+
+    # 🛡️ MIGRACIÓN AUTOMÁTICA: Forzamos la existencia de columnas críticas una por una
+    columnas_a_verificar = [
+        ("capacidad", "REAL DEFAULT 0.0"),
+        ("latitud", "REAL"),
+        ("longitud", "REAL")
+    ]
+    
+    for col_nombre, col_tipo in columnas_a_verificar:
+        try:
+            cursor.execute(f"ALTER TABLE puntos_reciclaje ADD COLUMN {col_nombre} {col_tipo}")
+            conexion.commit() 
+            print(f"✅ Columna '{col_nombre}' agregada con éxito.")
+        except sqlite3.OperationalError:
+            # Si falla es porque la columna probablemente ya existe
+            pass
 
     cursor.execute('CREATE TABLE IF NOT EXISTS contenedores (id INTEGER PRIMARY KEY AUTOINCREMENT, punto_id INTEGER, capacidad REAL NOT NULL, estado INTEGER NOT NULL, FOREIGN KEY(punto_id) REFERENCES puntos_reciclaje(id))')
     cursor.execute('CREATE TABLE IF NOT EXISTS historial_contenedor (id INTEGER PRIMARY KEY AUTOINCREMENT, contenedor_id INTEGER, valor REAL, fecha TEXT, FOREIGN KEY(contenedor_id) REFERENCES contenedores(id))')
@@ -108,35 +124,44 @@ def crear_ruta_prueba():
     conexion = sqlite3.connect(DB_PATH)
     cursor = conexion.cursor()
     
-    # 1. Aseguramos que existan datos maestros
+    print("🛠️ Ejecutando limpieza y reasignación de ruta para Juan...")
+    
+    # 1. Aseguramos datos maestros básicos
     cursor.execute("INSERT OR IGNORE INTO zonas (id, nombre) VALUES (1, 'Talca Centro')")
     cursor.execute("INSERT OR IGNORE INTO rutas (id, zona_id, nombre) VALUES (1, 1, 'Ruta Norte-1')")
-    cursor.execute("INSERT OR IGNORE INTO camiones (id, patente, capacidad_carga, estado, alerta) VALUES (1, 'ABCD-12', 5000, 1, 0)")
+    cursor.execute("INSERT OR IGNORE INTO camiones (id, patente, capacidad_carga, estado, alerta) VALUES (1, 'AB-CD-12', 5000, 1, 0)")
     
-    # 2. Aseguramos puntos de reciclaje para esa ruta
-    cursor.execute("INSERT OR IGNORE INTO puntos_reciclaje (id, ruta_id, zona_id, direccion, capacidad, estado) VALUES (201, 1, 1, 'Calle 1 Oriente #123, Talca', 1000.0, 1)")
-    cursor.execute("INSERT OR IGNORE INTO puntos_reciclaje (id, ruta_id, zona_id, direccion, capacidad, estado) VALUES (202, 1, 1, 'Av. San Miguel #456, Talca', 800.0, 1)")
+    # 2. Aseguramos puntos de reciclaje vinculados a la ruta 1
+    puntos_vinculados = [
+        (201, 1, 1, 'Calle 1 Oriente #123, Talca', 1000.0, -35.4264, -71.6554, 1),
+        (202, 1, 1, 'Av. San Miguel #456, Talca', 800.0, -35.4320, -71.6310, 1)
+    ]
+    for p in puntos_vinculados:
+        cursor.execute('''
+            INSERT OR REPLACE INTO puntos_reciclaje (id, ruta_id, zona_id, direccion, capacidad, latitud, longitud, estado)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', p)
     
-    # 3. Buscamos el ID real de Juan en la tabla empleados
+    # 3. Buscamos el ID real de Juan
     cursor.execute("SELECT id FROM empleados WHERE correo = 'juan@redcicla.cl'")
     juan = cursor.fetchone()
     
     if juan:
         juan_id = juan[0]
-        # 4. Verificamos si Juan ya tiene una ruta activa para no duplicar
-        cursor.execute("SELECT id FROM rutas_activas WHERE conductor_id = ? AND fecha_fin IS NULL", (juan_id,))
-        existe = cursor.fetchone()
+        # Borramos rutas activas previas de Juan para que la App siempre detecte una nueva hoy
+        cursor.execute("DELETE FROM rutas_activas WHERE conductor_id = ?", (juan_id,))
         
-        if not existe:
-            from datetime import datetime
-            fecha_hoy = datetime.now().strftime("%Y-%m-%d %H:%M")
-            cursor.execute('''
-                INSERT INTO rutas_activas (ruta_id, camion_id, conductor_id, fecha_inicio)
-                VALUES (1, 1, ?, ?)
-            ''', (juan_id, fecha_hoy))
-            print(f"✅ Ruta activa asignada exitosamente a Juan (ID: {juan_id})")
-        else:
-            print(f"ℹ️ Juan (ID: {juan_id}) ya tiene una ruta activa asignada.")
+        from datetime import datetime
+        fecha_hoy = datetime.now().strftime("%Y-%m-%d %H:%M")
+        
+        cursor.execute('''
+            INSERT INTO rutas_activas (ruta_id, camion_id, conductor_id, fecha_inicio)
+            VALUES (1, 1, ?, ?)
+        ''', (juan_id, fecha_hoy))
+        
+        print(f"✅ RUTA ASIGNADA: Juan (ID: {juan_id}) ahora tiene la 'Ruta Norte-1' activa.")
+    else:
+        print("❌ ERROR: No se encontró a Juan en la base de datos.")
     
     conexion.commit()
     conexion.close()
