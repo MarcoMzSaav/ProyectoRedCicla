@@ -897,25 +897,27 @@ def sincronizar_datos():
             img_antes_nombre = ""
             img_despues_nombre = ""
 
-            if registro.get('ruta_img_antes'):
-                img_antes_nombre = f"retiro_{uuid.uuid4().hex[:8]}_antes.jpg"
-                ruta_completa = os.path.join(fotos_dir, img_antes_nombre)
+            def guardar_base64(datos_base64, prefijo):
+                if not datos_base64 or len(datos_base64) < 100:
+                    return ""
+                
                 try:
-                    with open(ruta_completa, "wb") as f:
-                        f.write(base64.b64decode(registro['ruta_img_antes']))
+                    # Eliminar prefijos de datos si existen (ej: data:image/jpeg;base64,)
+                    if "," in datos_base64:
+                        datos_base64 = datos_base64.split(",")[1]
+                    
+                    nombre = f"retiro_{uuid.uuid4().hex[:8]}_{prefijo}.jpg"
+                    ruta = os.path.join(fotos_dir, nombre)
+                    
+                    with open(ruta, "wb") as f:
+                        f.write(base64.b64decode(datos_base64))
+                    return nombre
                 except Exception as e:
-                    print(f"Error decodificando imagen antes: {e}")
-                    img_antes_nombre = ""
+                    print(f"Error guardando imagen {prefijo}: {e}")
+                    return ""
 
-            if registro.get('ruta_img_despues'):
-                img_despues_nombre = f"retiro_{uuid.uuid4().hex[:8]}_despues.jpg"
-                ruta_completa = os.path.join(fotos_dir, img_despues_nombre)
-                try:
-                    with open(ruta_completa, "wb") as f:
-                        f.write(base64.b64decode(registro['ruta_img_despues']))
-                except Exception as e:
-                    print(f"Error decodificando imagen despues: {e}")
-                    img_despues_nombre = ""
+            img_antes_nombre = guardar_base64(registro.get('ruta_img_antes'), "antes")
+            img_despues_nombre = guardar_base64(registro.get('ruta_img_despues'), "despues")
 
             cursor.execute('''
                 INSERT INTO registros_retiro (ruta_activa_id, punto_id, fecha_hora, cantidad_retirada, ruta_img_antes, ruta_img_despues, estado)

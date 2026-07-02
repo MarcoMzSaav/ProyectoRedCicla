@@ -2,6 +2,8 @@ package com.example.appredcicla.network;
 
 import android.content.Context;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
@@ -234,14 +236,19 @@ public class SyncManager {
             InputStream inputStream = context.getContentResolver().openInputStream(uri);
             if (inputStream == null) return "";
 
-            byte[] bytes;
-            byte[] buffer = new byte[8192];
-            int bytesRead;
+            // 1. Decodificar a Bitmap
+            Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+            inputStream.close();
+
+            if (bitmap == null) return "";
+
+            // 2. Comprimir la imagen (Calidad 60% para que sea ligera en Render)
             ByteArrayOutputStream output = new ByteArrayOutputStream();
-            while ((bytesRead = inputStream.read(buffer)) != -1) {
-                output.write(buffer, 0, bytesRead);
-            }
-            bytes = output.toByteArray();
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 60, output);
+            byte[] bytes = output.toByteArray();
+            
+            Log.d(TAG, "Imagen convertida. Tamaño Base64: " + bytes.length + " bytes");
+
             return Base64.encodeToString(bytes, Base64.NO_WRAP);
         } catch (Exception e) {
             Log.e(TAG, "Error converting image to Base64", e);
