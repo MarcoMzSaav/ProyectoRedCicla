@@ -69,46 +69,119 @@ def dashboard():
     if 'usuario_nombre' not in session:
         return redirect(url_for('login'))
 
+    conexion = sqlite3.connect(DB_PATH)
+    cursor = conexion.cursor()
+
     try:
-        conexion = sqlite3.connect(DB_PATH)
-        cursor = conexion.cursor()
+        # Obtenemos una fila por cada ruta que tenga retiros registrados.
         cursor.execute('''
-    SELECT
-        r.punto_id,
-        p.direccion,
-        r.fecha_hora,
-        r.cantidad_retirada,
-        ra.pesaje_final,
+            SELECT
+                ra.id,
+                r.nombre,
+                c.patente,
+                COALESCE(cond.nombre_completo, 'Sin asignar'),
+                ra.fecha_inicio,
+                ra.fecha_fin,
+                ra.pesaje_final,
+                COALESCE(SUM(rr.cantidad_retirada), 0),
+                MAX(rr.id)
+            FROM rutas_activas ra
+            JOIN rutas r
+                ON ra.ruta_id = r.id
+            LEFT JOIN camiones c
+                ON ra.camion_id = c.id
+            LEFT JOIN empleados cond
+                ON ra.conductor_id = cond.id
+            JOIN registros_retiro rr
+                ON rr.ruta_activa_id = ra.id
+            GROUP BY
+                ra.id,
+                r.nombre,
+                c.patente,
+                cond.nombre_completo,
+                ra.fecha_inicio,
+                ra.fecha_fin,
+                ra.pesaje_final
+            ORDER BY MAX(rr.id) DESC
+        ''')
 
-        CASE
-            WHEN ra.pesaje_final IS NOT NULL THEN
-                ra.pesaje_final - (
-                    SELECT COALESCE(SUM(r2.cantidad_retirada), 0)
-                    FROM registros_retiro r2
-                    WHERE r2.ruta_activa_id = r.ruta_activa_id
-                )
-            ELSE NULL
-        END AS diferencia,
+        rutas_db = cursor.fetchall()
+        rutas_resumen = []
 
-        r.estado
+        for fila in rutas_db:
+            ruta_activa_id = fila[0]
+            total_app = float(fila[7] or 0)
+            pesaje_final = fila[6]
 
-    FROM registros_retiro r
-    JOIN puntos_reciclaje p
-        ON r.punto_id = p.id
-    LEFT JOIN rutas_activas ra
-        ON r.ruta_activa_id = ra.id
+            diferencia = None
+            if pesaje_final is not None:
+                diferencia = round(float(pesaje_final) - total_app, 1)
 
-    ORDER BY r.id DESC
-''')
-        retiros_db = cursor.fetchall()
+            # Retiros individuales pertenecientes a esta ruta.
+            cursor.execute('''
+                SELECT
+                    rr.id,
+                    p.direccion,
+                    rr.fecha_hora,
+                    rr.cantidad_retirada,
+                    rr.estado,
+                    rr.ruta_img_antes,
+                    rr.ruta_img_despues
+                FROM registros_retiro rr
+                JOIN puntos_reciclaje p
+                    ON rr.punto_id = p.id
+                WHERE rr.ruta_activa_id = ?
+                ORDER BY rr.id DESC
+            ''', (ruta_activa_id,))
+
+            retiros_db = cursor.fetchall()
+
+            retiros = [
+                {
+                    "id": retiro[0],
+                    "direccion": retiro[1],
+                    "fecha": retiro[2],
+                    "cantidad": retiro[3],
+                    "estado": retiro[4],
+                    "foto_antes": retiro[5],
+                    "foto_despues": retiro[6]
+                }
+                for retiro in retiros_db
+            ]
+
+            rutas_resumen.append({
+                "id": ruta_activa_id,
+                "nombre": fila[1],
+                "patente": fila[2],
+                "conductor": fila[3],
+                "inicio": fila[4],
+                "fin": fila[5],
+                "pesaje_final": pesaje_final,
+                "total_app": round(total_app, 1),
+                "diferencia": diferencia,
+                "retiros": retiros
+            })
+
+        pendientes_pesaje = sum(
+            1 for ruta in rutas_resumen
+            if ruta["pesaje_final"] is None
+        )
+
     except Exception as e:
-        retiros_db = []
-    finally:
-        if 'conexion' in locals():
-            conexion.close() 
-        
-    return render_template('dashboard.html', retiros=retiros_db, nombre=session.get('usuario_nombre'), rol=session.get('usuario_rol'))
+        print(f"Error cargando dashboard: {e}")
+        rutas_resumen = []
+        pendientes_pesaje = 0
 
+    finally:
+        conexion.close()
+
+    return render_template(
+        'dashboard.html',
+        rutas_resumen=rutas_resumen,
+        pendientes_pesaje=pendientes_pesaje,
+        nombre=session.get('usuario_nombre'),
+        rol=session.get('usuario_rol')
+    )
 # ==========================================
 # 3. MÓDULO CRUD DE EMPLEADOS (PERSONAL)
 # ==========================================

@@ -68,89 +68,239 @@
 <div class="card p-0 overflow-hidden">
     <div class="card-header bg-transparent border-0 px-4 py-4 d-flex justify-content-between align-items-center">
         <div>
-            <h5 class="mb-1 fw-bold" style="color: var(--color-sidebar-combine);">Últimos Retiros Sincronizados</h5>
-            <small class="text-muted">Operaciones en terreno rural</small>
+            <h5 class="mb-1 fw-bold"
+                style="color: var(--color-sidebar-combine);">
+                Últimas Rutas Sincronizadas
+            </h5>
+
+            <small class="text-muted">
+                Resumen de rutas y retiros realizados
+            </small>
         </div>
-        <span class="badge rounded-pill px-3 py-2 shadow-sm" style="background-color: #ffefb3; color: #b27b00;">
-            <i class="bi bi-arrow-repeat spin-icon"></i> 2 pendientes de pesaje
+
+        <span class="badge rounded-pill px-3 py-2 shadow-sm"
+              style="background-color: #ffefb3; color: #b27b00;">
+
+            <i class="bi bi-arrow-repeat spin-icon"></i>
+            {{ pendientes_pesaje }} pendientes de pesaje
         </span>
     </div>
-    
-    <div class="table-responsive px-3 pb-3">
-        <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
-                <tr>
-                    <th class="ps-3">ID Punto</th>
-                    <th>Comuna</th>
-                    <th>Fecha Retiro</th>
-                    <th>Pesaje App</th>
-                    <th>Pesaje Balanza</th>
-                    <th>Diferencia</th>
-                    <th>Estado</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for r in retiros %}
-                <tr>
-                    <td class="ps-3"><span class="fw-bold text-secondary">#{{ r[0] }}</span></td>
-                    <td class="fw-medium">{{ r[1] }}</td>
-                    <td class="text-muted">{{ r[2] }}</td>
-                    <td><span class="badge bg-light text-dark border">{{ r[3] }} kg</span></td>
-                    <!-- Pesaje final registrado al terminar la ruta -->
-                <td>
-                    {% if r[4] is not none %}
-                        <span class="badge bg-light text-dark border">
-                            {{ "%.1f"|format(r[4]) }} kg
+
+    <div class="card-body pt-0">
+
+        {% for ruta in rutas_resumen %}
+
+        <div class="border rounded-4 p-3 mb-3 bg-white shadow-sm">
+
+            <div class="row align-items-center g-3">
+
+                <div class="col-md-3">
+                    <small class="text-muted d-block">Ruta</small>
+                    <strong>{{ ruta.nombre }}</strong>
+
+                    <div class="small text-muted mt-1">
+                        <i class="bi bi-truck"></i>
+                        {{ ruta.patente }}
+                    </div>
+                </div>
+
+                <div class="col-md-2">
+                    <small class="text-muted d-block">Conductor</small>
+                    <strong>{{ ruta.conductor }}</strong>
+                </div>
+
+                <div class="col-md-2">
+                    <small class="text-muted d-block">
+                        Total registrado en app
+                    </small>
+
+                    <strong>{{ ruta.total_app }} kg</strong>
+                </div>
+
+                <div class="col-md-2">
+                    <small class="text-muted d-block">
+                        Estado
+                    </small>
+
+                    {% if ruta.fin %}
+                        <span class="badge bg-success">
+                            <i class="bi bi-check-circle"></i>
+                            Finalizada
                         </span>
                     {% else %}
-                        <span class="text-muted small fst-italic">
-                            <i class="bi bi-hourglass-split"></i> Pendiente
+                        <span class="badge bg-primary">
+                            <i class="bi bi-truck"></i>
+                            En ruta
                         </span>
                     {% endif %}
-                </td>
+                </div>
 
-                <!-- Diferencia entre la balanza y el total registrado por la app -->
-                <td>
-                    {% if r[5] is not none %}
-                        <span class="fw-bold
-                            {% if r[5] > 50 or r[5] < -50 %}
-                                text-danger
+                <div class="col-md-3 text-md-end">
+                    <button class="btn btn-outline-secondary btn-sm"
+                            type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#detalleRuta{{ ruta.id }}">
+
+                        <i class="bi bi-list-check"></i>
+                        Ver detalle
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- Contenido desplegable -->
+            <div class="collapse mt-3"
+                 id="detalleRuta{{ ruta.id }}">
+
+                <div class="p-3 rounded-3 bg-light border">
+
+                    <div class="row g-3 mb-3 text-center">
+
+                        <div class="col-md-3">
+                            <small class="text-muted d-block">
+                                Hora salida
+                            </small>
+
+                            <strong>
+                                {{ ruta.inicio[-5:] if ruta.inicio else '-' }}
+                            </strong>
+                        </div>
+
+                        <div class="col-md-3">
+                            <small class="text-muted d-block">
+                                Hora llegada
+                            </small>
+
+                            <strong>
+                                {{ ruta.fin[-5:] if ruta.fin else 'En curso' }}
+                            </strong>
+                        </div>
+
+                        <div class="col-md-2">
+                            <small class="text-muted d-block">
+                                Total app
+                            </small>
+
+                            <strong>{{ ruta.total_app }} kg</strong>
+                        </div>
+
+                        <div class="col-md-2">
+                            <small class="text-muted d-block">
+                                Peso balanza
+                            </small>
+
+                            {% if ruta.pesaje_final is not none %}
+                                <strong>{{ ruta.pesaje_final }} kg</strong>
                             {% else %}
-                                text-success
-                            {% endif %}">
-                            {{ "%.1f"|format(r[5]) }} kg
-                        </span>
-                    {% else %}
-                        <span class="text-muted">-</span>
-                    {% endif %}
-                </td>
+                                <span class="text-muted fst-italic">
+                                    Pendiente
+                                </span>
+                            {% endif %}
+                        </div>
 
-                <!-- Resultado de la comparación -->
-                <td>
-                    {% if r[5] is none %}
+                        <div class="col-md-2">
+                            <small class="text-muted d-block">
+                                Diferencia
+                            </small>
 
-                        <span class="badge bg-warning-subtle text-warning-emphasis border px-2 py-1 rounded-pill">
-                            <i class="bi bi-hourglass-split me-1"></i> Pendiente
-                        </span>
+                            {% if ruta.diferencia is not none %}
+                                <strong>{{ ruta.diferencia }} kg</strong>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </div>
 
-                    {% elif r[5] <= 50 and r[5] >= -50 %}
+                    </div>
 
-                        <span class="badge bg-success-subtle text-success border border-success border-opacity-25 px-2 py-1 rounded-pill">
-                            <i class="bi bi-check-circle-fill me-1"></i> Validado
-                        </span>
+                    <div class="table-responsive">
 
-                    {% else %}
+                        <table class="table table-sm align-middle mb-0">
 
-                        <span class="badge bg-danger-subtle text-danger border border-danger border-opacity-25 px-2 py-1 rounded-pill">
-                            <i class="bi bi-shield-exclamation me-1"></i> Auditoría
-                        </span>
+                            <thead>
+                                <tr>
+                                    <th>Punto</th>
+                                    <th>Fecha</th>
+                                    <th>Pesaje App</th>
+                                    <th>Estado</th>
+                                    <th>Evidencia</th>
+                                </tr>
+                            </thead>
 
-                    {% endif %}
-                </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                            <tbody>
+
+                                {% for retiro in ruta.retiros %}
+
+                                <tr>
+                                    <td>
+                                        {{ retiro.direccion }}
+                                    </td>
+
+                                    <td class="text-muted">
+                                        {{ retiro.fecha }}
+                                    </td>
+
+                                    <td>
+                                        <span class="badge bg-light text-dark border">
+                                            {{ retiro.cantidad }} kg
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        {% if retiro.estado == 'Completado' %}
+
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check-circle"></i>
+                                                Recolectado
+                                            </span>
+
+                                        {% elif retiro.estado == 'Pendiente' %}
+
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="bi bi-hourglass-split"></i>
+                                                Pendiente
+                                            </span>
+
+                                        {% else %}
+
+                                            <span class="badge bg-danger">
+                                                {{ retiro.estado }}
+                                            </span>
+
+                                        {% endif %}
+                                    </td>
+
+                                    <td>
+                                        {% if retiro.foto_antes or retiro.foto_despues %}
+                                            <span class="text-success small">
+                                                <i class="bi bi-images"></i>
+                                                Con evidencia
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted small fst-italic">
+                                                Sin fotos
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+
+                                {% endfor %}
+
+                            </tbody>
+                        </table>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% else %}
+
+        <div class="text-center text-muted py-5">
+            No existen rutas con retiros sincronizados.
+        </div>
+
+        {% endfor %}
+
     </div>
 </div>
 
