@@ -114,6 +114,9 @@ public class SyncManager {
                     return;
                 }
 
+                int totalPendientes = cursor.getCount();
+                Log.d(TAG, "Iniciando sincronización de " + totalPendientes + " registros");
+
                 JsonArray jsonArray = new JsonArray();
                 while (cursor.moveToNext()) {
                     JsonObject obj = new JsonObject();
@@ -131,6 +134,8 @@ public class SyncManager {
                     jsonArray.add(obj);
                 }
                 cursor.close();
+
+                Log.d(TAG, "Payload JSON construido. Enviando al servidor...");
 
                 RequestBody body = RequestBody.create(
                         gson.toJson(jsonArray),

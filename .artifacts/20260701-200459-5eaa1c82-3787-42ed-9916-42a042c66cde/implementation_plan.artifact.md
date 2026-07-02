@@ -1,6 +1,6 @@
-# Persistencia Local de Ruta y Puntos (Modo Offline)
+# Soporte para Múltiples Registros Offline
 
-Este plan soluciona la pérdida de datos cuando la app falla al actualizar por falta de internet, permitiendo que el conductor siga trabajando con la última ruta conocida.
+Este plan permite que la aplicación guarde cada retiro como un registro individual, evitando que se sobrescriban o sumen datos de un mismo punto antes de sincronizar.
 
 ## Cambios Propuestos
 
@@ -8,33 +8,21 @@ Este plan soluciona la pérdida de datos cuando la app falla al actualizar por f
 
 #### [ConexionSQLite.java](file:///C:/Users/maxxi/OneDrive/Escritorio/RCicla/ProyectoRedCicla/app_movil/app/src/main/java/com/example/appredcicla/database/ConexionSQLite.java)
 
-- Incrementar `DATABASE_VERSION` a 4.
-- Actualizar `puntos_reciclaje`: Añadir columnas `latitud` y `longitud` (REAL).
-- Implementar `guardarRutaLocal(int rutaActivaId, String nombreRuta, String patente, JsonArray puntos)`:
-    - Borrar la caché anterior.
-    - Guardar los metadatos en `SharedPreferences`.
-    - Insertar los puntos en la tabla local.
-- Implementar `obtenerPuntosLocales()`: Devolver un Cursor con los puntos guardados.
+- Modificar la función `guardarPesajeOffline`:
+    - Eliminar la lógica de búsqueda de registros existentes (`SELECT ... WHERE sincronizado = 0`).
+    - Hacer que cada llamada realice un `INSERT` directo en la tabla `registros_retiro`.
+    - Esto garantiza que si un conductor visita el mismo punto dos veces (o registra dos cargas distintas), ambas se guarden con su propia hora y fotos.
 
-### Lógica de Actividades (Android Java)
+### Lógica de Sincronización (Android)
 
-#### [RegistrarRetiroActivity.java](file:///C:/Users/maxxi/OneDrive/Escritorio/RCicla/ProyectoRedCicla/app_movil/app/src/main/java/com/example/appredcicla/RegistrarRetiroActivity.java)
+#### [SyncManager.java](file:///C:/Users/maxxi/OneDrive/Escritorio/RCicla/ProyectoRedCicla/app_movil/app/src/main/java/com/example/appredcicla/network/SyncManager.java)
 
-- En `cargarDatosRuta`:
-    - Si la petición al servidor es exitosa, llamar a `dbHelper.guardarRutaLocal`.
-    - Si la petición falla (onError), intentar cargar desde la caché local usando `dbHelper`.
-    - Mostrar un mensaje (Toast) indicando que se están usando "Datos Offline" si el servidor no responde.
-
-#### [MapaActivity.java](file:///C:/Users/maxxi/OneDrive/Escritorio/RCicla/ProyectoRedCicla/app_movil/app/src/main/java/com/example/appredcicla/MapaActivity.java)
-
-- En `cargarPuntosDeServidor`:
-    - Lógica similar: Si falla la red, cargar marcadores desde la base de datos local.
+- La función `sincronizarDatos` ya recorre todos los registros pendientes con un bucle `while(cursor.moveToNext())`, por lo que enviará el array completo de registros individuales al servidor automáticamente.
 
 ## Plan de Verificación
 
 ### Pruebas Manuales
-1.  **Carga Inicial:** Abrir la app con internet y cargar la ruta.
-2.  **Modo Avión:** Activar modo avión y presionar el botón de "Actualizar" en la pantalla principal o el mapa.
-3.  **Verificación:** Confirmar que los datos se mantienen y aparece un aviso de "Modo Offline".
-4.  **Cierre y Reapertura:** Cerrar la app en modo avión y volver a entrar. Verificar que la ruta sigue ahí.
-5.  **Actualización Real:** Volver a conectar internet, cambiar un dato en la web y verificar que al actualizar en la app, la caché local se renueva.
+1.  **Múltiples Registros:** Realizar 3 retiros distintos en la app (pueden ser del mismo punto o distintos) en modo offline.
+2.  **Sincronizar:** Conectarse a internet y presionar "Sincronizar con la nube".
+3.  **Verificación Web:** Confirmar en la plataforma administrativa que aparecen los 3 registros independientes en la sección de "Reportes de Terreno", cada uno con su peso, hora y fotos respectivas.
+4.  **Limpieza:** Verificar que tras la sincronización, los 3 archivos físicos de fotos se eliminan del celular.
