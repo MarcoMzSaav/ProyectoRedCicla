@@ -629,6 +629,19 @@ def crear_ruta():
         for punto_id in puntos_seleccionados:
             cursor.execute("UPDATE puntos_reciclaje SET ruta_id = ? WHERE id = ?", (nueva_ruta_id, int(punto_id)))
 
+        # 3. Vincular automáticamente a la app móvil (Ruta Activa)
+        if conductor_id:
+            # Buscamos un camión disponible (el primero activo)
+            cursor.execute("SELECT id FROM camiones WHERE estado = 1 LIMIT 1")
+            camion = cursor.fetchone()
+            camion_id = camion[0] if camion else 1 # Fallback al ID 1 si no hay
+            
+            fecha_ahora = datetime.now().strftime("%Y-%m-%d %H:%M")
+            cursor.execute('''
+                INSERT INTO rutas_activas (ruta_id, camion_id, conductor_id, fecha_inicio)
+                VALUES (?, ?, ?, ?)
+            ''', (nueva_ruta_id, camion_id, conductor_id, fecha_ahora))
+
         conexion.commit()
         conexion.close()
     except Exception as e:
@@ -641,12 +654,40 @@ def asignar_conductor_ruta(id_ruta):
     if 'usuario_nombre' not in session:
         return redirect(url_for('login'))
 
-    conductor_id = request.form.get('conductor_id')
+    nuevo_conductor_id = request.form.get('conductor_id')
     
     try:
         conexion = sqlite3.connect(DB_PATH)
         cursor = conexion.cursor()
-        cursor.execute("UPDATE rutas SET conductor_id = ? WHERE id = ?", (conductor_id, id_ruta))
+        
+        # 1. Obtener conductor anterior para cerrar su sesión si es necesario
+        cursor.execute("SELECT conductor_id FROM rutas WHERE id = ?", (id_ruta,))
+        viejo_conductor = cursor.fetchone()
+        
+        # 2. Actualizar la ruta maestra
+        cursor.execute("UPDATE rutas SET conductor_id = ? WHERE id = ?", (nuevo_conductor_id, id_ruta))
+        
+        # 3. Sincronizar App Móvil
+        fecha_ahora = datetime.now().strftime("%Y-%m-%d %H:%M")
+        
+        # Cerrar ruta activa al conductor anterior (si tenía una pendiente de esta ruta)
+        if viejo_conductor and viejo_conductor[0]:
+            cursor.execute('''
+                UPDATE rutas_activas SET fecha_fin = ? 
+                WHERE conductor_id = ? AND ruta_id = ? AND fecha_fin IS NULL
+            ''', (fecha_ahora, viejo_conductor[0], id_ruta))
+
+        # Abrir ruta activa al nuevo conductor (si se asignó uno)
+        if nuevo_conductor_id:
+            cursor.execute("SELECT id FROM camiones WHERE estado = 1 LIMIT 1")
+            camion = cursor.fetchone()
+            camion_id = camion[0] if camion else 1
+            
+            cursor.execute('''
+                INSERT INTO rutas_activas (ruta_id, camion_id, conductor_id, fecha_inicio)
+                VALUES (?, ?, ?, ?)
+            ''', (id_ruta, camion_id, nuevo_conductor_id, fecha_ahora))
+
         conexion.commit()
         conexion.close()
     except Exception as e:
@@ -663,10 +704,14 @@ def eliminar_ruta(id_ruta):
         conexion = sqlite3.connect(DB_PATH)
         cursor = conexion.cursor()
         
-        # 1. Liberar los puntos asociados
+        # 1. Cerrar rutas activas asociadas (para que la app deje de verla)
+        fecha_fin = datetime.now().strftime("%Y-%m-%d %H:%M")
+        cursor.execute("UPDATE rutas_activas SET fecha_fin = ? WHERE ruta_id = ? AND fecha_fin IS NULL", (fecha_fin, id_ruta))
+        
+        # 2. Liberar los puntos asociados
         cursor.execute("UPDATE puntos_reciclaje SET ruta_id = NULL WHERE ruta_id = ?", (id_ruta,))
         
-        # 2. Eliminar la ruta
+        # 3. Eliminar la ruta maestra
         cursor.execute("DELETE FROM rutas WHERE id = ?", (id_ruta,))
         
         conexion.commit()

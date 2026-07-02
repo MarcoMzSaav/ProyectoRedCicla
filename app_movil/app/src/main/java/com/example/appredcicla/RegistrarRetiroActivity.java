@@ -95,6 +95,17 @@ public class RegistrarRetiroActivity extends AppCompatActivity {
         txtStatusAntes = findViewById(R.id.txtStatusAntes);
         txtStatusDespues = findViewById(R.id.txtStatusDespues);
 
+        ImageButton btnActualizar = findViewById(R.id.btnActualizarDatos);
+        if (btnActualizar != null) {
+            btnActualizar.setOnClickListener(v -> {
+                int id = getSharedPreferences("Sesion", MODE_PRIVATE).getInt("usuario_id", -1);
+                if (id != -1) {
+                    Toast.makeText(this, "Actualizando ruta...", Toast.LENGTH_SHORT).show();
+                    cargarDatosRuta(id);
+                }
+            });
+        }
+
         // Cargar datos iniciales
         int usuarioId = getSharedPreferences("Sesion", MODE_PRIVATE).getInt("usuario_id", -1);
         if (usuarioId != -1) {
@@ -169,6 +180,16 @@ public class RegistrarRetiroActivity extends AppCompatActivity {
                     Toast.makeText(this, "Mapa no disponible", Toast.LENGTH_SHORT).show();
                 }
             });
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Actualizar datos cada vez que el usuario vuelve a esta pantalla
+        int usuarioId = getSharedPreferences("Sesion", MODE_PRIVATE).getInt("usuario_id", -1);
+        if (usuarioId != -1) {
+            cargarDatosRuta(usuarioId);
         }
     }
 

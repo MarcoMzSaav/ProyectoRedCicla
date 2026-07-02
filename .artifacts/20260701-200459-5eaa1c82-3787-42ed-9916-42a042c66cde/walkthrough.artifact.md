@@ -1,29 +1,31 @@
-# Módulo de Gestión de Rutas y Reportes - RedCicla
+# Módulo de Gestión de Rutas y Sincronización - RedCicla
 
-Se han implementado con éxito las mejoras en la gestión de rutas y el sistema de reportes de terreno con evidencia visual.
+Se ha implementado con éxito el sistema de gestión de rutas y su sincronización en tiempo real con la aplicación móvil.
 
 ## Cambios Implementados
 
-### 1. Gestión de Rutas con Conductores
-- **Migración de BD**: Se añadió la columna `conductor_id` a la tabla `rutas`.
-- **Asignación Dinámica**: Permite vincular conductores al crear rutas y reasignarlos individualmente.
-- **Gestión de Puntos**: Soporte para añadir o quitar puntos de reciclaje de forma independiente en cada ruta.
+### 1. Gestión de Rutas y Personal (Web)
+- **Asignación de Conductores**: Los administradores pueden asignar personal a las rutas y reasignarlos dinámicamente.
+- **Gestión de Puntos**: Capacidad para añadir o quitar puntos de reciclaje de forma individual en cada ruta.
+- **Sincronización Automática**: El sistema actualiza la tabla `rutas_activas` en tiempo real al realizar cambios en la web.
 
-### 2. Reportes de Terreno con Evidencia Visual
-- **Visualización de Fotos**: Se integraron las imágenes "Antes" y "Después" directamente en el listado de reportes.
-- **Galería Integrada**: Uso de Modales de Bootstrap para ampliar las fotos y botones de descarga directa.
-- **Tolerancia a Fallos**: El sistema maneja correctamente los reportes sin registro fotográfico (mostrando "Sin fotos").
+### 2. Evidencia Visual y Reportes
+- **Galería de Terreno**: Visualización de fotos "Antes" y "Después" con soporte para descarga y modales de alta resolución.
+- **Tolerancia a Datos**: El sistema maneja de forma segura los registros que no contienen evidencia fotográfica.
 
-### 3. Correcciones Generales
-- Se restauró la funcionalidad del modal de registro de nuevos puntos en **[puntos.html](file:///C:/Users/maxxi/OneDrive/Escritorio/RCicla/ProyectoRedCicla/pag_web/templates/puntos.html)**.
+### 3. Sincronización Web-Móvil (App)
+- **Botón de Actualizar**: Se añadió un botón flotante en el mapa del celular para que el conductor pueda forzar la descarga de la última ruta sin reiniciar la app.
+- **Actualización Dinámica**: El mapa se limpia y redibuja automáticamente al recibir nuevos datos del servidor.
 
 ## Verificación Realizada
 
-1. **Prueba de Rutas**: Se verificó la creación, edición y eliminación de rutas con sus respectivos conductores y puntos.
-2. **Prueba de Reportes**: Se confirmó que los botones de imagen solo aparecen cuando hay evidencia y que los modales cargan las fotos correctamente.
-3. **Prueba de Estabilidad**: Se comprobó que el sistema no falla al encontrar registros antiguos o simulados sin imágenes.
+1. **Prueba de Flujo Completo**:
+    - Se creó una ruta en la web y se asignó un conductor.
+    - Se verificó que la app móvil recibía los datos mediante el botón de actualización.
+    - Se cambió el conductor y se confirmó que el nuevo usuario recibió la ruta instantáneamente.
+2. **Prueba de Interfaz**: Se validó el diseño del botón flotante en Android y la visualización de imágenes en el panel administrativo.
 
 ## Archivos Clave
-- **[main.py](file:///C:/Users/maxxi/OneDrive/Escritorio/RCicla/ProyectoRedCicla/pag_web/main.py)** (Servidor Flask)
-- **[rutas.html](file:///C:/Users/maxxi/OneDrive/Escritorio/RCicla/ProyectoRedCicla/pag_web/templates/rutas.html)** (Gestión Logística)
-- **[reportes_terreno.html](file:///C:/Users/maxxi/OneDrive/Escritorio/RCicla/ProyectoRedCicla/pag_web/templates/reportes_terreno.html)** (Evidencia Visual)
+- **[main.py](file:///C:/Users/maxxi/OneDrive/Escritorio/RCicla/ProyectoRedCicla/pag_web/main.py)** (Servidor Central)
+- **[rutas.html](file:///C:/Users/maxxi/OneDrive/Escritorio/RCicla/ProyectoRedCicla/pag_web/templates/rutas.html)** (Gestión Web)
+- **[MapaActivity.java](file:///C:/Users/maxxi/OneDrive/Escritorio/RCicla/ProyectoRedCicla/app_movil/app/src/main/java/com/example/appredcicla/MapaActivity.java)** (Lógica Móvil)

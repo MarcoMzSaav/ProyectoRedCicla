@@ -83,6 +83,11 @@ public class MapaActivity extends AppCompatActivity
         if (btnOptimizar != null) {
             btnOptimizar.setOnClickListener(v -> optimizarRuta());
         }
+
+        findViewById(R.id.btnActualizarRuta).setOnClickListener(v -> {
+            Toast.makeText(this, "Actualizando ruta desde el servidor...", Toast.LENGTH_SHORT).show();
+            cargarPuntosDeServidor();
+        });
     }
 
     @Override

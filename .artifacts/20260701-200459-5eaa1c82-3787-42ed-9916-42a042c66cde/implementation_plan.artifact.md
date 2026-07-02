@@ -1,31 +1,29 @@
-# Visualización de Imágenes en Reportes de Terreno
+# Botón de Actualización de Ruta en App Móvil
 
-Este plan detalla la integración de las fotografías "Antes" y "Después" en el listado de reportes de terreno para auditoría y verificación.
+Este plan detalla la adición de un botón de actualización en la pantalla del mapa de la aplicación móvil para asegurar que el conductor tenga siempre la última ruta asignada desde la web.
 
 ## Cambios Propuestos
 
-### Backend (Flask)
+### Frontend Móvil (Android Layout)
 
-#### [main.py](file:///C:/Users/maxxi/OneDrive/Escritorio/RCicla/ProyectoRedCicla/pag_web/main.py)
+#### [activity_mapa.xml](file:///C:/Users/maxxi/OneDrive/Escritorio/RCicla/ProyectoRedCicla/app_movil/app/src/main/res/layout/activity_mapa.xml)
 
-- **`reportes_terreno`**: Actualizar la consulta SQL para incluir las columnas `ruta_img_antes` y `ruta_img_despues` de la tabla `registros_retiro`.
-- Asegurar que las rutas de las imágenes sean accesibles a través de la carpeta `static`.
+- Añadir un botón flotante (FloatingActionButton) o un botón en la barra superior/inferior para refrescar.
+- Se propone añadir un botón con un ícono de actualización en la esquina superior del mapa o integrarlo en el menú inferior.
 
-### Frontend (Templates)
+### Lógica Móvil (Android Java)
 
-#### [reportes_terreno.html](file:///C:/Users/maxxi/OneDrive/Escritorio/RCicla/ProyectoRedCicla/pag_web/templates/reportes_terreno.html)
+#### [MapaActivity.java](file:///C:/Users/maxxi/OneDrive/Escritorio/RCicla/ProyectoRedCicla/app_movil/app/src/main/java/com/example/appredcicla/MapaActivity.java)
 
-- Añadir una nueva columna "Evidencia (Fotos)" a la tabla.
-- **Lógica de Visualización**:
-    - Si el reporte tiene imágenes, mostrar íconos o botones miniatura.
-    - Implementar un Modal de Bootstrap para ampliar las fotos al hacer clic.
-    - Si no hay imágenes, mostrar un mensaje discreto como "Sin registro visual".
-- Añadir botones de descarga directa para cada imagen si están presentes.
+- Configurar el Listener para el nuevo botón.
+- Al presionar, ejecutar nuevamente `cargarPuntosDeServidor()`.
+- Mostrar un mensaje de "Actualizando ruta..." mediante un `Toast`.
+- Limpiar el mapa y la polilínea actual antes de cargar los nuevos datos.
 
 ## Plan de Verificación
 
 ### Pruebas Manuales
-1.  **Carga de Datos:** Verificar que el listado sigue funcionando correctamente con reportes antiguos que no tienen imágenes.
-2.  **Visualización:** Comprobar que si existen rutas de imagen válidas en la base de datos, los íconos/botones aparecen.
-3.  **Modal:** Abrir el modal y verificar que las imágenes se cargan y se ven correctamente en tamaño grande.
-4.  **Descarga:** Probar que los enlaces de descarga funcionan (si se implementan).
+1.  **Cambio en Web:** Cambiar la ruta o el conductor en la plataforma administrativa.
+2.  **Presionar Actualizar:** En la app móvil, presionar el nuevo botón de actualizar.
+3.  **Confirmación Visual:** Verificar que los marcadores en el mapa cambian a los nuevos puntos asignados.
+4.  **Estado Vacío:** Si se elimina la ruta en la web y se actualiza en la app, verificar que el mapa se limpie correctamente.
