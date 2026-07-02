@@ -461,6 +461,24 @@ def reporte_co2():
 
     return render_template('reporte_co2.html', datos=datos_co2)
 
+@app.route('/reportes-terreno/completar/<int:id_reporte>', methods=['POST'])
+def completar_reporte(id_reporte):
+    if session.get('usuario_rol') not in ['Jefe', 'Administrador']:
+        return redirect(url_for('dashboard'))
+
+    conexion = sqlite3.connect(DB_PATH)
+    cursor = conexion.cursor()
+
+    cursor.execute("""
+        UPDATE registros_retiro
+        SET estado = 'Completado'
+        WHERE id = ?
+    """, (id_reporte,))
+
+    conexion.commit()
+    conexion.close()
+
+    return redirect(url_for('reportes_terreno'))
 
 @app.route('/reportes-terreno')
 def reportes_terreno():
