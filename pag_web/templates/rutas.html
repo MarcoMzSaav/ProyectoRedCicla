@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3><i class="bi bi-map-fill text-success"></i> Gestión de Rutas de Recolección</h3>
+    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalNuevaRuta">
+        <i class="bi bi-plus-circle"></i> Crear Nueva Ruta
+    </button>
+</div>
+
+<div class="row">
+    {% for ruta in rutas %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center pt-3">
+                <h5 class="card-title mb-0 text-success fw-bold">
+                    <i class="bi bi-signpost-split"></i> {{ ruta.nombre }}
+                </h5>
+                <span class="badge bg-light text-dark border">{{ ruta.puntos|length }} puntos</span>
+            </div>
+            <div class="card-body">
+                <button class="btn btn-sm btn-outline-secondary w-100 mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#puntosRuta{{ ruta.id }}">
+                    <i class="bi bi-list-check"></i> Ver Puntos de Reciclaje
+                </button>
+
+                <div class="collapse" id="puntosRuta{{ ruta.id }}">
+                    <ul class="list-group list-group-flush small">
+                        {% for punto in ruta.puntos %}
+                        <li class="list-group-item d-flex align-items-start px-0">
+                            <i class="bi bi-geo-alt-fill text-danger me-2 mt-1"></i>
+                            <div>
+                                <span class="fw-bold">#{{ punto[0] }}</span><br>
+                                <span class="text-muted">{{ punto[1] }}</span>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12 text-center py-5">
+        <div class="text-muted">
+            <i class="bi bi-info-circle display-4"></i>
+            <p class="mt-3">No hay rutas creadas actualmente. Usa el botón superior para crear una.</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Modal para Nueva Ruta -->
+<div class="modal fade" id="modalNuevaRuta" tabindex="-1" aria-labelledby="modalNuevaRutaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form action="/rutas/crear" method="POST">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="modalNuevaRutaLabel"><i class="bi bi-plus-circle"></i> Configurar Nueva Ruta</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Nombre de la Ruta</label>
+                        <input type="text" name="nombre" class="form-control form-control-lg" placeholder="Ej: Ruta Norte 01, Sector Centro..." required>
+                    </div>
+
+                    <h6 class="fw-bold border-bottom pb-2 mb-3">Seleccionar Puntos de Reciclaje</h6>
+                    <p class="text-muted small">Solo se muestran los puntos que no pertenecen a ninguna ruta activa.</p>
+
+                    <div class="table-responsive" style="max-height: 300px;">
+                        <table class="table table-sm table-hover">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th width="40"></th>
+                                    <th>ID</th>
+                                    <th>Dirección</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for p in puntos_libres %}
+                                <tr>
+                                    <td>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="puntos" value="{{ p[0] }}" id="check{{ p[0] }}">
+                                        </div>
+                                    </td>
+                                    <td><label for="check{{ p[0] }}" class="form-check-label">#{{ p[0] }}</label></td>
+                                    <td><label for="check{{ p[0] }}" class="form-check-label">{{ p[1] }}</label></td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted py-4">
+                                        No hay puntos libres disponibles. Todos los puntos ya pertenecen a una ruta.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success px-4" {% if puntos_libres|length == 0 %}disabled{% endif %}>
+                        <i class="bi bi-check-lg"></i> Crear Ruta
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
