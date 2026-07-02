@@ -15,10 +15,11 @@
                 <thead class="table-light">
                     <tr>
                         <th class="px-4 py-3">ID Reporte</th>
-                        <th>Ubicación del Contenedor</th>
+                        <th>Ubicación</th>
                         <th>Fecha y Hora</th>
-                        <th>Vidrio Recolectado</th>
-                        <th>Estado / Incidencia</th>
+                        <th>Carga</th>
+                        <th>Estado</th>
+                        <th>Evidencia Visual</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -31,26 +32,80 @@
                             {% if r[3] and r[3] > 0 %}
                                 <span class="fw-bold">{{ r[3] }} kg</span>
                             {% else %}
-                                <span class="text-muted fst-italic">Sin carga</span>
+                                <span class="text-muted fst-italic">0 kg</span>
                             {% endif %}
                         </td>
                         <td>
                             {% if r[4] == 'Completado' %}
-                                <span class="badge bg-success px-3 py-2"><i class="bi bi-check-circle"></i> Recolectado</span>
-                            {% elif r[4] == 'Pendiente' %}
-                                <span class="badge bg-warning text-dark px-3 py-2"><i class="bi bi-truck"></i> En Ruta</span>
+                                <span class="badge bg-success px-2 py-1"><i class="bi bi-check-circle"></i> Recolectado</span>
                             {% else %}
-                                <span class="badge bg-danger px-3 py-2"><i class="bi bi-exclamation-triangle"></i> {{ r[4] }}</span>
+                                <span class="badge bg-warning text-dark px-2 py-1"><i class="bi bi-truck"></i> {{ r[4] }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if r[5] or r[6] %}
+                                <div class="btn-group btn-group-sm">
+                                    {% if r[5] %}
+                                        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalFoto{{ r[0] }}Antes">
+                                            <i class="bi bi-image"></i> Antes
+                                        </button>
+                                    {% endif %}
+                                    {% if r[6] %}
+                                        <button class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#modalFoto{{ r[0] }}Despues">
+                                            <i class="bi bi-image-fill"></i> Después
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            {% else %}
+                                <span class="text-muted small fst-italic">Sin fotos</span>
                             {% endif %}
                         </td>
                     </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="5" class="text-center text-muted py-5">
-                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                            No hay reportes de terreno registrados en el sistema.
-                        </td>
-                    </tr>
+
+                    <!-- Modal Fotos Antes -->
+                    {% if r[5] %}
+                    <div class="modal fade" id="modalFoto{{ r[0] }}Antes" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Evidencia ANTES del Retiro - Reporte #{{ r[0] }}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body text-center bg-dark">
+                                    <img src="{{ url_for('static', filename='images/fotos/' + r[5]) }}" class="img-fluid rounded shadow-lg" alt="Foto Antes">
+                                </div>
+                                <div class="modal-footer">
+                                    <a href="{{ url_for('static', filename='images/fotos/' + r[5]) }}" download class="btn btn-primary">
+                                        <i class="bi bi-download"></i> Descargar Imagen
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Modal Fotos Después -->
+                    {% if r[6] %}
+                    <div class="modal fade" id="modalFoto{{ r[0] }}Despues" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Evidencia DESPUÉS del Retiro - Reporte #{{ r[0] }}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body text-center bg-dark">
+                                    <img src="{{ url_for('static', filename='images/fotos/' + r[6]) }}" class="img-fluid rounded shadow-lg" alt="Foto Después">
+                                </div>
+                                <div class="modal-footer">
+                                    <a href="{{ url_for('static', filename='images/fotos/' + r[6]) }}" download class="btn btn-success">
+                                        <i class="bi bi-download"></i> Descargar Imagen
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
                     {% endfor %}
                 </tbody>
             </table>

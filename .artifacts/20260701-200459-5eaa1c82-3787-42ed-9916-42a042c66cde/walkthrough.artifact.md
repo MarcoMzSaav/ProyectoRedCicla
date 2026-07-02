@@ -1,34 +1,29 @@
-# Módulo de Gestión de Rutas - RedCicla
+# Módulo de Gestión de Rutas y Reportes - RedCicla
 
-Se ha implementado con éxito el nuevo módulo de **Rutas** en la plataforma administrativa web de RedCicla. Este módulo permite a los administradores organizar los puntos de reciclaje en rutas lógicas de recolección.
+Se han implementado con éxito las mejoras en la gestión de rutas y el sistema de reportes de terreno con evidencia visual.
 
 ## Cambios Implementados
 
-### 1. Backend (Flask & SQLite)
-- **Ruta `/rutas`**: Recupera todas las rutas de la base de datos junto con sus puntos de reciclaje asociados.
-- **Ruta `/rutas/crear`**: Permite la creación de nuevas entradas en la tabla `rutas` y actualiza la relación en la tabla `puntos_reciclaje` para los puntos seleccionados.
-- **Filtro de Disponibilidad**: El sistema identifica automáticamente qué puntos de reciclaje no tienen ruta asignada para mostrarlos como opciones en el creador de rutas.
+### 1. Gestión de Rutas con Conductores
+- **Migración de BD**: Se añadió la columna `conductor_id` a la tabla `rutas`.
+- **Asignación Dinámica**: Permite vincular conductores al crear rutas y reasignarlos individualmente.
+- **Gestión de Puntos**: Soporte para añadir o quitar puntos de reciclaje de forma independiente en cada ruta.
 
-### 2. Frontend (Plantillas Jinja2)
-- **[rutas.html](file:///C:/Users/maxxi/OneDrive/Escritorio/RCicla/ProyectoRedCicla/pag_web/templates/rutas.html)**:
-    - Diseño basado en tarjetas (cards) para cada ruta.
-    - Menú colapsable (Bootstrap Accordion style) para listar los puntos dentro de cada tarjeta sin recargar la página.
-    - Modal de creación optimizado con tabla de selección múltiple.
-- **[base.html](file:///C:/Users/maxxi/OneDrive/Escritorio/RCicla/ProyectoRedCicla/pag_web/templates/base.html)**: Se integró el enlace "Rutas" en el sidebar con el estilo visual del sistema.
+### 2. Reportes de Terreno con Evidencia Visual
+- **Visualización de Fotos**: Se integraron las imágenes "Antes" y "Después" directamente en el listado de reportes.
+- **Galería Integrada**: Uso de Modales de Bootstrap para ampliar las fotos y botones de descarga directa.
+- **Tolerancia a Fallos**: El sistema maneja correctamente los reportes sin registro fotográfico (mostrando "Sin fotos").
 
-### 3. Corrección en Puntos Limpios
-- Se restauró el modal de registro en **[puntos.html](file:///C:/Users/maxxi/OneDrive/Escritorio/RCicla/ProyectoRedCicla/pag_web/templates/puntos.html)**, permitiendo nuevamente el ingreso de nuevas coordenadas y direcciones.
+### 3. Correcciones Generales
+- Se restauró la funcionalidad del modal de registro de nuevos puntos en **[puntos.html](file:///C:/Users/maxxi/OneDrive/Escritorio/RCicla/ProyectoRedCicla/pag_web/templates/puntos.html)**.
 
 ## Verificación Realizada
 
-1. **Prueba de Navegación**: Se confirmó que el enlace en el menú lateral redirige correctamente a `/rutas`.
-2. **Prueba de Visualización**: Se verificó que las rutas existentes muestran el recuento exacto de puntos y que el botón de desplegar funciona suavemente.
-3. **Prueba de Creación**:
-    - Se creó una ruta de prueba ("Ruta Norte 01").
-    - Se seleccionaron 3 puntos de la lista de disponibles.
-    - Se verificó en la base de datos que los puntos ahora tienen el `ruta_id` correspondiente y ya no aparecen como disponibles para nuevas rutas.
+1. **Prueba de Rutas**: Se verificó la creación, edición y eliminación de rutas con sus respectivos conductores y puntos.
+2. **Prueba de Reportes**: Se confirmó que los botones de imagen solo aparecen cuando hay evidencia y que los modales cargan las fotos correctamente.
+3. **Prueba de Estabilidad**: Se comprobó que el sistema no falla al encontrar registros antiguos o simulados sin imágenes.
 
 ## Archivos Clave
-- **[main.py](file:///C:/Users/maxxi/OneDrive/Escritorio/RCicla/ProyectoRedCicla/pag_web/main.py)** (Lógica de servidor)
-- **[rutas.html](file:///C:/Users/maxxi/OneDrive/Escritorio/RCicla/ProyectoRedCicla/pag_web/templates/rutas.html)** (Interfaz de usuario)
-- **[puntos.html](file:///C:/Users/maxxi/OneDrive/Escritorio/RCicla/ProyectoRedCicla/pag_web/templates/puntos.html)** (Corrección de registro de puntos)
+- **[main.py](file:///C:/Users/maxxi/OneDrive/Escritorio/RCicla/ProyectoRedCicla/pag_web/main.py)** (Servidor Flask)
+- **[rutas.html](file:///C:/Users/maxxi/OneDrive/Escritorio/RCicla/ProyectoRedCicla/pag_web/templates/rutas.html)** (Gestión Logística)
+- **[reportes_terreno.html](file:///C:/Users/maxxi/OneDrive/Escritorio/RCicla/ProyectoRedCicla/pag_web/templates/reportes_terreno.html)** (Evidencia Visual)

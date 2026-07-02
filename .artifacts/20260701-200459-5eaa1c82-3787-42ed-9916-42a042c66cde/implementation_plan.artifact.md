@@ -1,6 +1,6 @@
-# Implementación del Módulo de Rutas
+# Visualización de Imágenes en Reportes de Terreno
 
-Este plan detalla la creación de un nuevo apartado en la plataforma web para gestionar las rutas de recolección de vidrio.
+Este plan detalla la integración de las fotografías "Antes" y "Después" en el listado de reportes de terreno para auditoría y verificación.
 
 ## Cambios Propuestos
 
@@ -8,28 +8,24 @@ Este plan detalla la creación de un nuevo apartado en la plataforma web para ge
 
 #### [main.py](file:///C:/Users/maxxi/OneDrive/Escritorio/RCicla/ProyectoRedCicla/pag_web/main.py)
 
-- Agregar la ruta `/rutas` (GET) para listar todas las rutas.
-- Agregar la ruta `/rutas/crear` (POST) para registrar nuevas rutas asignando un nombre y múltiples puntos de reciclaje.
-- Modificar el procesamiento de datos para enviar la lista de rutas y los puntos disponibles al template.
+- **`reportes_terreno`**: Actualizar la consulta SQL para incluir las columnas `ruta_img_antes` y `ruta_img_despues` de la tabla `registros_retiro`.
+- Asegurar que las rutas de las imágenes sean accesibles a través de la carpeta `static`.
 
 ### Frontend (Templates)
 
-#### [rutas.html](file:///C:/Users/maxxi/OneDrive/Escritorio/RCicla/ProyectoRedCicla/pag_web/templates/rutas.html) [NUEVO]
+#### [reportes_terreno.html](file:///C:/Users/maxxi/OneDrive/Escritorio/RCicla/ProyectoRedCicla/pag_web/templates/reportes_terreno.html)
 
-- Crear un listado de rutas en formato de tabla o tarjetas.
-- Implementar un desplegable (Bootstrap Collapse) para ver los puntos asociados a cada ruta.
-- Crear un modal para "Nueva Ruta" con:
-    - Campo para el nombre.
-    - Listado de selección múltiple (checkboxes) de puntos de reciclaje que **no** tienen ruta asignada o selección libre.
-
-#### [base.html](file:///C:/Users/maxxi/OneDrive/Escritorio/RCicla/ProyectoRedCicla/pag_web/templates/base.html)
-
-- Agregar el enlace "Rutas" a la barra de navegación lateral o superior.
+- Añadir una nueva columna "Evidencia (Fotos)" a la tabla.
+- **Lógica de Visualización**:
+    - Si el reporte tiene imágenes, mostrar íconos o botones miniatura.
+    - Implementar un Modal de Bootstrap para ampliar las fotos al hacer clic.
+    - Si no hay imágenes, mostrar un mensaje discreto como "Sin registro visual".
+- Añadir botones de descarga directa para cada imagen si están presentes.
 
 ## Plan de Verificación
 
 ### Pruebas Manuales
-1.  **Navegación:** Verificar que el enlace "Rutas" aparece y lleva a la página correcta.
-2.  **Visualización:** Comprobar que las rutas existentes se listan y el botón de desplegar puntos funciona.
-3.  **Creación:** Intentar crear una ruta nueva con un nombre y 2-3 puntos seleccionados. Verificar que los puntos se actualizan en la base de datos con el nuevo `ruta_id`.
-4.  **Validación:** Asegurarse de que no se puedan crear rutas sin nombre o sin puntos.
+1.  **Carga de Datos:** Verificar que el listado sigue funcionando correctamente con reportes antiguos que no tienen imágenes.
+2.  **Visualización:** Comprobar que si existen rutas de imagen válidas en la base de datos, los íconos/botones aparecen.
+3.  **Modal:** Abrir el modal y verificar que las imágenes se cargan y se ven correctamente en tamaño grande.
+4.  **Descarga:** Probar que los enlaces de descarga funcionan (si se implementan).

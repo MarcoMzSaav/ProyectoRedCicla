@@ -468,9 +468,10 @@ def reportes_terreno():
     conexion = sqlite3.connect(DB_PATH)
     cursor = conexion.cursor()
     
-    # Traemos el historial de retiros cruzando datos con los puntos de reciclaje
+    # Traemos el historial de retiros incluyendo las rutas de las imágenes
     cursor.execute('''
-        SELECT r.id, p.direccion, r.fecha_hora, r.cantidad_retirada, r.estado
+        SELECT r.id, p.direccion, r.fecha_hora, r.cantidad_retirada, r.estado,
+               r.ruta_img_antes, r.ruta_img_despues
         FROM registros_retiro r
         JOIN puntos_reciclaje p ON r.punto_id = p.id
         ORDER BY r.id DESC
@@ -558,8 +559,161 @@ def monitoreo_rutas():
 
     conexion.close()
     return render_template('monitoreo.html', viajes=viajes_procesados)
+
 # ==========================================
-# 6. API DE SINCRONIZACIÓN MÓVIL
+# 6. GESTIÓN DE RUTAS (NUEVO)
+# ==========================================
+@app.route('/rutas')
+def gestionar_rutas():
+    if 'usuario_nombre' not in session:
+        return redirect(url_for('login'))
+
+    conexion = sqlite3.connect(DB_PATH)
+    cursor = conexion.cursor()
+
+    # 1. Obtener todas las rutas con su conductor asignado
+    cursor.execute('''
+        SELECT r.id, r.nombre, e.nombre_completo 
+        FROM rutas r
+        LEFT JOIN empleados e ON r.conductor_id = e.id
+        ORDER BY r.id DESC
+    ''')
+    rutas_db = cursor.fetchall()
+
+    lista_rutas = []
+    for r in rutas_db:
+        ruta_id = r[0]
+        # 2. Para cada ruta, obtener sus puntos asociados
+        cursor.execute("SELECT id, direccion FROM puntos_reciclaje WHERE ruta_id = ?", (ruta_id,))
+        puntos_asociados = cursor.fetchall()
+        
+        lista_rutas.append({
+            "id": ruta_id,
+            "nombre": r[1],
+            "conductor": r[2] if r[2] else "Sin asignar",
+            "puntos": puntos_asociados
+        })
+
+    # 3. Obtener puntos que NO tienen ruta asignada para el modal de creación
+    cursor.execute("SELECT id, direccion FROM puntos_reciclaje WHERE ruta_id IS NULL AND estado = 1")
+    puntos_libres = cursor.fetchall()
+
+    # 4. Obtener lista de conductores disponibles para los selectores
+    cursor.execute("SELECT id, nombre_completo FROM empleados WHERE rol = 'Conductor' AND estado = 1")
+    conductores = cursor.fetchall()
+
+    conexion.close()
+    return render_template('rutas.html', rutas=lista_rutas, puntos_libres=puntos_libres, conductores=conductores)
+
+@app.route('/rutas/crear', methods=['POST'])
+def crear_ruta():
+    if 'usuario_nombre' not in session:
+        return redirect(url_for('login'))
+
+    nombre_ruta = request.form.get('nombre')
+    conductor_id = request.form.get('conductor_id')
+    puntos_seleccionados = request.form.getlist('puntos')
+
+    if not nombre_ruta or not puntos_seleccionados:
+        return redirect(url_for('gestionar_rutas'))
+
+    try:
+        conexion = sqlite3.connect(DB_PATH)
+        cursor = conexion.cursor()
+
+        # 1. Crear la nueva ruta con conductor asignado
+        cursor.execute("INSERT INTO rutas (nombre, conductor_id) VALUES (?, ?)", (nombre_ruta, conductor_id))
+        nueva_ruta_id = cursor.lastrowid
+
+        # 2. Asignar la ruta a los puntos seleccionados
+        for punto_id in puntos_seleccionados:
+            cursor.execute("UPDATE puntos_reciclaje SET ruta_id = ? WHERE id = ?", (nueva_ruta_id, int(punto_id)))
+
+        conexion.commit()
+        conexion.close()
+    except Exception as e:
+        print(f"Error al crear ruta: {e}")
+
+    return redirect(url_for('gestionar_rutas'))
+
+@app.route('/rutas/asignar_conductor/<int:id_ruta>', methods=['POST'])
+def asignar_conductor_ruta(id_ruta):
+    if 'usuario_nombre' not in session:
+        return redirect(url_for('login'))
+
+    conductor_id = request.form.get('conductor_id')
+    
+    try:
+        conexion = sqlite3.connect(DB_PATH)
+        cursor = conexion.cursor()
+        cursor.execute("UPDATE rutas SET conductor_id = ? WHERE id = ?", (conductor_id, id_ruta))
+        conexion.commit()
+        conexion.close()
+    except Exception as e:
+        print(f"Error al asignar conductor: {e}")
+
+    return redirect(url_for('gestionar_rutas'))
+
+@app.route('/rutas/eliminar/<int:id_ruta>', methods=['POST'])
+def eliminar_ruta(id_ruta):
+    if 'usuario_nombre' not in session:
+        return redirect(url_for('login'))
+
+    try:
+        conexion = sqlite3.connect(DB_PATH)
+        cursor = conexion.cursor()
+        
+        # 1. Liberar los puntos asociados
+        cursor.execute("UPDATE puntos_reciclaje SET ruta_id = NULL WHERE ruta_id = ?", (id_ruta,))
+        
+        # 2. Eliminar la ruta
+        cursor.execute("DELETE FROM rutas WHERE id = ?", (id_ruta,))
+        
+        conexion.commit()
+        conexion.close()
+    except Exception as e:
+        print(f"Error al eliminar ruta: {e}")
+
+    return redirect(url_for('gestionar_rutas'))
+
+@app.route('/rutas/quitar_punto/<int:id_punto>', methods=['POST'])
+def quitar_punto_de_ruta(id_punto):
+    if 'usuario_nombre' not in session:
+        return redirect(url_for('login'))
+
+    try:
+        conexion = sqlite3.connect(DB_PATH)
+        cursor = conexion.cursor()
+        cursor.execute("UPDATE puntos_reciclaje SET ruta_id = NULL WHERE id = ?", (id_punto,))
+        conexion.commit()
+        conexion.close()
+    except Exception as e:
+        print(f"Error al quitar punto: {e}")
+
+    return redirect(url_for('gestionar_rutas'))
+
+@app.route('/rutas/agregar_punto/<int:id_ruta>', methods=['POST'])
+def agregar_punto_a_ruta(id_ruta):
+    if 'usuario_nombre' not in session:
+        return redirect(url_for('login'))
+
+    id_punto = request.form.get('punto_id')
+    if not id_punto:
+        return redirect(url_for('gestionar_rutas'))
+
+    try:
+        conexion = sqlite3.connect(DB_PATH)
+        cursor = conexion.cursor()
+        cursor.execute("UPDATE puntos_reciclaje SET ruta_id = ? WHERE id = ?", (id_ruta, int(id_punto)))
+        conexion.commit()
+        conexion.close()
+    except Exception as e:
+        print(f"Error al agregar punto a ruta: {e}")
+
+    return redirect(url_for('gestionar_rutas'))
+
+# ==========================================
+# 7. API DE SINCRONIZACIÓN MÓVIL
 # ==========================================
 @app.route('/api/login', methods=['POST'])
 def api_login():

@@ -13,7 +13,13 @@ def inicializar_bd_central():
     # 1. CREAR TODAS LAS TABLAS DEL SISTEMA
     # ==========================================
     cursor.execute('CREATE TABLE IF NOT EXISTS zonas (id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT NOT NULL)')
-    cursor.execute('CREATE TABLE IF NOT EXISTS rutas (id INTEGER PRIMARY KEY AUTOINCREMENT, zona_id INTEGER, nombre TEXT NOT NULL, FOREIGN KEY(zona_id) REFERENCES zonas(id))')
+    cursor.execute('''CREATE TABLE IF NOT EXISTS rutas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, 
+        zona_id INTEGER, 
+        nombre TEXT NOT NULL, 
+        conductor_id INTEGER,
+        FOREIGN KEY(zona_id) REFERENCES zonas(id),
+        FOREIGN KEY(conductor_id) REFERENCES empleados(id))''')
     
     cursor.execute('''CREATE TABLE IF NOT EXISTS empleados (
         id INTEGER PRIMARY KEY AUTOINCREMENT, rut TEXT UNIQUE NOT NULL, nombre_completo TEXT NOT NULL,
@@ -44,10 +50,17 @@ def inicializar_bd_central():
         try:
             cursor.execute(f"ALTER TABLE puntos_reciclaje ADD COLUMN {col_nombre} {col_tipo}")
             conexion.commit() 
-            print(f"✅ Columna '{col_nombre}' agregada con éxito.")
+            print(f"✅ Columna '{col_nombre}' agregada con éxito a puntos_reciclaje.")
         except sqlite3.OperationalError:
-            # Si falla es porque la columna probablemente ya existe
             pass
+
+    # Nueva migración para la tabla rutas
+    try:
+        cursor.execute("ALTER TABLE rutas ADD COLUMN conductor_id INTEGER")
+        conexion.commit()
+        print("✅ Columna 'conductor_id' agregada con éxito a rutas.")
+    except sqlite3.OperationalError:
+        pass
 
     cursor.execute('CREATE TABLE IF NOT EXISTS contenedores (id INTEGER PRIMARY KEY AUTOINCREMENT, punto_id INTEGER, capacidad REAL NOT NULL, estado INTEGER NOT NULL, FOREIGN KEY(punto_id) REFERENCES puntos_reciclaje(id))')
     cursor.execute('CREATE TABLE IF NOT EXISTS historial_contenedor (id INTEGER PRIMARY KEY AUTOINCREMENT, contenedor_id INTEGER, valor REAL, fecha TEXT, FOREIGN KEY(contenedor_id) REFERENCES contenedores(id))')

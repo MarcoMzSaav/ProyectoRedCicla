@@ -70,6 +70,43 @@
     </div>
 </div>
 
+<!-- Modal para Registrar Nuevo Punto -->
+<div class="modal fade" id="modalNuevoPunto" tabindex="-1" aria-labelledby="modalNuevoPuntoLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="/puntos/agregar" method="POST">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="modalNuevoPuntoLabel"><i class="bi bi-plus-circle"></i> Registrar Nuevo Punto</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Dirección</label>
+                        <input type="text" name="direccion" class="form-control" placeholder="Ej: Av. Principal 123" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Latitud</label>
+                            <input type="number" step="any" name="latitud" class="form-control" placeholder="-35.4264" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Longitud</label>
+                            <input type="number" step="any" name="longitud" class="form-control" placeholder="-71.6554" required>
+                        </div>
+                    </div>
+                    <div class="alert alert-info py-2 small">
+                        <i class="bi bi-info-circle"></i> Puedes obtener las coordenadas desde Google Maps haciendo clic derecho sobre el lugar.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Guardar Punto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
     var map = L.map('mapa').setView([-35.4264, -71.6554], 13);
