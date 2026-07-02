@@ -626,13 +626,28 @@ def api_ruta_activa(usuario_id):
         
         # Ahora obtenemos los puntos de esa ruta (incluyendo capacidad)
         cursor.execute('''
-            SELECT p.id, p.direccion, p.capacidad
+            SELECT
+                p.id,
+                p.direccion,
+                p.capacidad,
+                p.latitud,
+                p.longitud
             FROM puntos_reciclaje p
             JOIN rutas_activas ra ON p.ruta_id = ra.ruta_id
-            WHERE ra.id = ? AND p.estado = 1
+            WHERE ra.id = ?
+            AND p.estado = 1
         ''', (ruta_id_activa,))
-        
-        puntos = [{"id": row[0], "direccion": row[1], "capacidad": row[2]} for row in cursor.fetchall()]
+
+        puntos = [
+            {
+                "id": row[0],
+                "direccion": row[1],
+                "capacidad": row[2],
+                "latitud": row[3],
+                "longitud": row[4]
+            }
+            for row in cursor.fetchall()
+        ]
         print(f"📍 API: Enviando {len(puntos)} puntos al celular.")
         
         conexion.close()
