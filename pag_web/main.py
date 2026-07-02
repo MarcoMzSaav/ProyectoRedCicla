@@ -4,6 +4,7 @@ import webbrowser
 import base64
 import uuid
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from threading import Timer
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
@@ -15,6 +16,10 @@ DB_PATH = os.path.join(BASE_DIR, 'redcicla_central.db')
 app = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.secret_key = 'redcicla_clave_super_secreta_2026'
+ZONA_HORARIA_CHILE = ZoneInfo("America/Santiago")
+
+def obtener_hora_chile():
+    return datetime.now(ZONA_HORARIA_CHILE).strftime("%Y-%m-%d %H:%M")
 
 # ==========================================
 # 1. RUTAS DE SESIÓN (LOGIN / LOGOUT)
@@ -656,7 +661,7 @@ def crear_ruta():
             camion = cursor.fetchone()
             camion_id = camion[0] if camion else 1 # Fallback al ID 1 si no hay
             
-            fecha_ahora = datetime.now().strftime("%Y-%m-%d %H:%M")
+            fecha_ahora = obtener_hora_chile()
             cursor.execute('''
                 INSERT INTO rutas_activas (ruta_id, camion_id, conductor_id, fecha_inicio)
                 VALUES (?, ?, ?, ?)
@@ -688,7 +693,7 @@ def asignar_conductor_ruta(id_ruta):
         cursor.execute("UPDATE rutas SET conductor_id = ? WHERE id = ?", (nuevo_conductor_id, id_ruta))
         
         # 3. Sincronizar App Móvil
-        fecha_ahora = datetime.now().strftime("%Y-%m-%d %H:%M")
+        fecha_ahora = obtener_hora_chile()
         
         # Cerrar ruta activa al conductor anterior (si tenía una pendiente de esta ruta)
         if viejo_conductor and viejo_conductor[0]:
@@ -725,7 +730,7 @@ def eliminar_ruta(id_ruta):
         cursor = conexion.cursor()
         
         # 1. Cerrar rutas activas asociadas (para que la app deje de verla)
-        fecha_fin = datetime.now().strftime("%Y-%m-%d %H:%M")
+        fecha_fin = obtener_hora_chile()
         cursor.execute("UPDATE rutas_activas SET fecha_fin = ? WHERE ruta_id = ? AND fecha_fin IS NULL", (fecha_fin, id_ruta))
         
         # 2. Liberar los puntos asociados
