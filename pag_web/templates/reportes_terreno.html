@@ -37,9 +37,33 @@
                         </td>
                         <td>
                             {% if r[4] == 'Completado' %}
-                                <span class="badge bg-success px-2 py-1"><i class="bi bi-check-circle"></i> Recolectado</span>
+
+                                <span class="badge bg-success px-2 py-1">
+                                    <i class="bi bi-check-circle"></i> Recolectado
+                                </span>
+
+                            {% elif r[4] == 'Pendiente' %}
+
+                                <form method="POST"
+                                    action="{{ url_for('completar_reporte', id_reporte=r[0]) }}"
+                                    style="display: inline;">
+
+                                    <button type="submit"
+                                            class="btn btn-warning btn-sm fw-bold"
+                                            onclick="return confirm('¿Confirmar este retiro como recolectado?');">
+
+                                        <i class="bi bi-truck"></i>
+                                        Marcar como recolectado
+                                    </button>
+
+                                </form>
+
                             {% else %}
-                                <span class="badge bg-warning text-dark px-2 py-1"><i class="bi bi-truck"></i> {{ r[4] }}</span>
+
+                                <span class="badge bg-warning text-dark px-2 py-1">
+                                    <i class="bi bi-exclamation-triangle"></i> {{ r[4] }}
+                                </span>
+
                             {% endif %}
                         </td>
                         <td>
