@@ -1,72 +1,90 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="mb-4 p-3 bg-white rounded shadow-sm d-flex justify-content-between align-items-center border border-warning">
-    <div>
-        <h6 class="mb-1 text-warning fw-bold"><i class="bi bi-cpu"></i> Entorno de Pruebas Integradas</h6>
-        <p class="mb-0 text-muted small">Simula la llegada de un camión al acopio enviando pesajes offline mediante JSON.</p>
+
+<div class="mb-5 p-4 glass-panel d-flex justify-content-between align-items-center">
+    <div class="d-flex align-items-center">
+        <div class="bg-white p-3 rounded-circle shadow-sm me-3 text-warning-custom d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+            <i class="bi bi-cpu-fill fs-4"></i>
+        </div>
+        <div>
+            <h5 class="mb-1 fw-bold text-dark">Entorno de Pruebas Integradas</h5>
+            <p class="mb-0 text-muted small">Simula la llegada de un camión al acopio enviando pesajes offline mediante JSON.</p>
+        </div>
     </div>
-    <button onclick="simularEnvioCelular()" class="btn btn-warning fw-bold">
-        <i class="bi bi-phone-vibrate"></i> Simular Sincronización Móvil
+    <button onclick="simularEnvioCelular()" class="btn btn-warning fw-bold px-4 py-2 shadow-sm rounded-pill" style="background-color: #ffb703; border: none; color: #1c1c1e;">
+        <i class="bi bi-phone-vibrate me-1"></i> Sincronizar App
     </button>
 </div>
 
-<div class="row g-3 mb-4">
+<div class="row g-4 mb-5">
+    
     <div class="col-md-4">
-        <div class="card border-0 shadow-sm p-3 border-start border-4 border-success">
+        <div class="card h-100 p-4">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h6 class="text-muted text-uppercase small">Vidrio Mensual Recolectado</h6>
-                    <h3 class="fw-bold text-dark mb-0">14,250 kg</h3>
+                    <h6 class="text-muted text-uppercase small fw-bold mb-2">Vidrio Mensual Recolectado</h6>
+                    <h2 class="fw-bold mb-0" style="color: var(--color-sidebar-combine);">14,250 <span class="fs-5 text-muted fw-normal">kg</span></h2>
                 </div>
-                <div class="bg-success-subtle p-3 rounded-circle text-success fs-3">
-                    <i class="bi bi-boxes"></i>
+                <div class="p-3 rounded-circle text-white d-flex justify-content-center align-items-center shadow-sm" 
+                     style="background: linear-gradient(135deg, #52b788, #1b4332); width: 60px; height: 60px;">
+                    <i class="bi bi-boxes fs-3"></i>
                 </div>
             </div>
         </div>
     </div>
+    
     <div class="col-md-4">
-        <div class="card border-0 shadow-sm p-3 border-start border-4 border-info">
+        <div class="card h-100 p-4">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h6 class="text-muted text-uppercase small">Impacto Ambiental Neto</h6>
-                    <h3 class="fw-bold text-dark mb-0">-3.4 tn CO2e</h3>
+                    <h6 class="text-muted text-uppercase small fw-bold mb-2">Impacto Ambiental Neto</h6>
+                    <h2 class="fw-bold mb-0 text-success">-3.4 <span class="fs-5 text-muted fw-normal">tn CO₂e</span></h2>
                 </div>
-                <div class="bg-info-subtle p-3 rounded-circle text-info fs-3">
-                    <i class="bi bi-tree"></i>
+                <div class="p-3 rounded-circle text-white d-flex justify-content-center align-items-center shadow-sm" 
+                     style="background: linear-gradient(135deg, #00b4d8, #0077b6); width: 60px; height: 60px;">
+                    <i class="bi bi-tree-fill fs-3"></i>
                 </div>
             </div>
         </div>
     </div>
+    
     <div class="col-md-4">
-        <div class="card border-0 shadow-sm p-3 border-start border-4 border-danger">
+        <div class="card h-100 p-4">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h6 class="text-muted text-uppercase small">Camiones con Alerta</h6>
-                    <h3 class="fw-bold text-dark mb-0">1</h3>
+                    <h6 class="text-muted text-uppercase small fw-bold mb-2">Camiones con Alerta</h6>
+                    <h2 class="fw-bold mb-0 text-danger">1 <span class="fs-5 text-muted fw-normal">unidad</span></h2>
                 </div>
-                <div class="bg-danger-subtle p-3 rounded-circle text-danger fs-3">
-                    <i class="bi bi-exclamation-triangle"></i>
+                <div class="p-3 rounded-circle text-white d-flex justify-content-center align-items-center shadow-sm" 
+                     style="background: linear-gradient(135deg, #f4a261, #e76f51); width: 60px; height: 60px;">
+                    <i class="bi bi-exclamation-triangle-fill fs-3"></i>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="card border-0 shadow-sm">
-    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-        <h5 class="mb-0 text-secondary fw-bold">Últimos Retiros Sincronizados (Terreno Rural)</h5>
-        <span class="badge bg-warning text-dark"><i class="bi bi-arrow-repeat"></i> 2 pendientes por validar en pesaje final</span>
+<div class="card p-0 overflow-hidden">
+    <div class="card-header bg-transparent border-0 px-4 py-4 d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="mb-1 fw-bold" style="color: var(--color-sidebar-combine);">Últimos Retiros Sincronizados</h5>
+            <small class="text-muted">Operaciones en terreno rural</small>
+        </div>
+        <span class="badge rounded-pill px-3 py-2 shadow-sm" style="background-color: #ffefb3; color: #b27b00;">
+            <i class="bi bi-arrow-repeat spin-icon"></i> 2 pendientes de pesaje
+        </span>
     </div>
-    <div class="table-responsive">
+    
+    <div class="table-responsive px-3 pb-3">
         <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
                 <tr>
-                    <th>ID Punto</th>
+                    <th class="ps-3">ID Punto</th>
                     <th>Comuna</th>
                     <th>Fecha Retiro</th>
-                    <th>Pesaje App (Conductor)</th>
-                    <th>Pesaje Balanza (Acopio)</th>
+                    <th>Pesaje App</th>
+                    <th>Pesaje Balanza</th>
                     <th>Diferencia</th>
                     <th>Estado</th>
                 </tr>
@@ -74,23 +92,33 @@
             <tbody>
                 {% for r in retiros %}
                 <tr>
-                    <td><span class="fw-bold">#{{ r[0] }}</span></td>
-                    <td>{{ r[1] }}</td>
-                    <td>{{ r[2] }}</td>
-                    <td>{{ r[3] }} kg</td>
-                    <td>{{ r[4] }} kg</td>
+                    <td class="ps-3"><span class="fw-bold text-secondary">#{{ r[0] }}</span></td>
+                    <td class="fw-medium">{{ r[1] }}</td>
+                    <td class="text-muted">{{ r[2] }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ r[3] }} kg</span></td>
                     <td>
                         {% if r[4] == 0 %}
-                            Pendiente Acopio
+                            <span class="text-muted small fst-italic"><i class="bi bi-hourglass-split"></i> Pendiente</span>
                         {% else %}
-                            {{ r[3] | float | round(2) }} kg
+                            <span class="badge bg-light text-dark border">{{ r[4] }} kg</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if r[4] == 0 %}
+                            <span class="text-muted">-</span>
+                        {% else %}
+                            <span class="text-dark fw-bold">{{ r[3] | float | round(2) }} kg</span>
                         {% endif %}
                     </td>
                     <td>
                         {% if r[5] == 'Validado' %}
-                            <span class="badge bg-success">Validado</span>
+                            <span class="badge bg-success-subtle text-success border border-success border-opacity-25 px-2 py-1 rounded-pill">
+                                <i class="bi bi-check-circle-fill me-1"></i> Validado
+                            </span>
                         {% else %}
-                            <span class="badge bg-danger">Auditoría</span>
+                            <span class="badge bg-danger-subtle text-danger border border-danger border-opacity-25 px-2 py-1 rounded-pill">
+                                <i class="bi bi-shield-exclamation me-1"></i> Auditoría
+                            </span>
                         {% endif %}
                     </td>
                 </tr>
@@ -99,6 +127,11 @@
         </table>
     </div>
 </div>
+
+<style>
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    .spin-icon { display: inline-block; animation: spin 4s linear infinite; }
+</style>
 
 <script>
 function simularEnvioCelular() {
@@ -130,10 +163,7 @@ function simularEnvioCelular() {
     .then(data => {
         if(data.status === "success") {
             alert("📱 ¡Simulación Exitosa! El servidor Python recibió el JSON del celular.\nLa tabla se actualizará.");
-            // Le damos medio segundo para cerrar hilos antes de recargar
-            setTimeout(() => {
-                location.reload();
-            }, 500);
+            setTimeout(() => { location.reload(); }, 500);
         } else {
             alert("Error en la API: " + data.message);
         }

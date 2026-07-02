@@ -16,7 +16,7 @@
     <style>
         :root {
             /* 60% Fondo: Gris humo claro, elegante y descansa la vista */
-            --color-bg-light: #f4f7f6; 
+            --color-bg-light: #c8e0d8; 
             
             /* 30% Contraste: Verde bosque profundo (Seriedad corporativa) */
             --color-sidebar-combine: #1b4332; 
@@ -40,6 +40,7 @@
             min-height: 100vh;
             color: var(--color-text-main);
             overflow-x: hidden;
+            cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><text y='20' font-size='20'>🌲</text></svg>") 12 0, auto;
         }
 
         /* Agrega esta regla nueva justo debajo del body para asegurar que todos los títulos sean Poppins */
@@ -225,7 +226,7 @@
             color: var(--color-sidebar-combine) !important; /* El texto se vuelve más oscuro al leer */
             font-weight: 500;
         }
-        
+
         /* =======================================================
            ELIMINACIÓN RADICAL DE LA CAPA OSCURA (CÓDIGO AMIGO)
            ======================================================= */
@@ -249,6 +250,23 @@
         body.modal-open {
             overflow: auto !important;
             padding-right: 0 !important;
+        }
+    
+    /* =======================================================
+           EFECTO HOVER VERDE ESMERALDA PARA LAS TABLAS
+           ======================================================= */
+        .table-hover {
+            /* 1. Cambiamos el color gris por defecto de Bootstrap a un verde esmeralda muy transparente */
+            --bs-table-hover-bg: rgba(82, 183, 136, 0.15) !important;
+            
+            /* 2. Hacemos que el texto resalte poniéndose color verde oscuro corporativo */
+            --bs-table-hover-color: #1b4332 !important; 
+        }
+
+        /* 3. Le damos una transición suave para que el color no cambie de golpe, sino que "se encienda" y "se apague" suavemente */
+        .table-hover tbody tr > * {
+            transition: background-color 0.25s ease, color 0.25s ease;
+            cursor: pointer; /* Opcional: Convierte el cursor en manito (o arbolito) al pasar por la fila */
         }
     </style>
 </head>
