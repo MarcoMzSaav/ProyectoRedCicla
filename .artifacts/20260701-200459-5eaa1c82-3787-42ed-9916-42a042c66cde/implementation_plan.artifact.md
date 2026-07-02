@@ -1,36 +1,29 @@
-# Corrección de Sincronización de Imágenes (Base64) - Fase 2
+# Persistencia de Imágenes Offline
 
-Este plan resuelve el problema de que las imágenes no aparecen en la web, atacando tres frentes: permisos/formato en la app, almacenamiento en el servidor y rutas de visualización.
+Este plan corrige la pérdida de imágenes al cerrar la aplicación antes de sincronizar, asegurando que las fotos se guarden físicamente en el almacenamiento interno del teléfono.
 
-## Cambios Realizados / Propuestos
+## Cambios Propuestos
 
-### 1. Servidor (Infraestructura)
-- [Hecho] Se detectó que existía un archivo llamado `fotos` que bloqueaba la creación de la carpeta. Se eliminó y se creó el directorio `pag_web/static/images/fotos/`.
+### App Móvil (Android Java)
 
-### 2. App Móvil (Android Java)
+#### [RegistrarRetiroActivity.java](file:///C:/Users/maxxi/OneDrive/Escritorio/RCicla/ProyectoRedCicla/app_movil/app/src/main/java/com/example/appredcicla/RegistrarRetiroActivity.java)
+
+- Modificar el flujo de `botonGuardar`:
+    - Antes de guardar en la base de datos, copiar las imágenes seleccionadas desde la galería/cámara a una carpeta privada de la aplicación (`files/fotos_pendientes/`).
+    - Guardar en SQLite la ruta del **archivo interno** en lugar del URI temporal.
+    - Implementar una función `copiarImagenInterna(Uri uri, String nombreDestino)` para realizar la copia física.
 
 #### [SyncManager.java](file:///C:/Users/maxxi/OneDrive/Escritorio/RCicla/ProyectoRedCicla/app_movil/app/src/main/java/com/example/appredcicla/network/SyncManager.java)
-- Optimizar `convertImageToBase64`:
-    - Añadir **compresión** de imagen (JPEG al 70%) para evitar que la cadena Base64 sea demasiado pesada y cause errores de red o memoria (OOM).
-    - Añadir Logs para verificar en consola si la conversión es exitosa o falla por permisos.
-- Asegurar el envío de la cadena Base64 pura.
 
-### 3. Plataforma Web (Python/Flask)
-
-#### [main.py](file:///C:/Users/maxxi/OneDrive/Escritorio/RCicla/ProyectoRedCicla/pag_web/main.py)
-- Reforzar `/api/sincronizar`:
-    - Manejar posibles prefijos de Base64 (ej: `data:image/jpeg;base64,`).
-    - Mejorar el manejo de errores al guardar archivos para que no dejen la base de datos con rutas vacías silenciosamente.
+- Actualizar `convertImageToBase64`:
+    - Ahora debe ser capaz de leer archivos desde rutas de archivos internos (`/data/user/0/...`).
+- Modificar `marcarComoSincronizados`:
+    - Después de una sincronización exitosa, **eliminar físicamente** los archivos de la carpeta `fotos_pendientes/` para no llenar la memoria del teléfono.
 
 ## Plan de Verificación
 
 ### Pruebas Manuales
-1.  **Verificar Carpeta:** Ejecutar `list_files` en `static/images/fotos` para asegurar que está vacía y lista.
-2.  **Sincronizar:** Realizar un registro en la app y sincronizar.
-3.  **Verificar Logs:** Revisar la consola de Android Studio para ver si `SyncManager` indica "Base64 Length: > 0".
-4.  **Verificar Servidor:** Comprobar que aparecen archivos `.jpg` en la carpeta `fotos`.
-5.  **Verificar Web:** Abrir el reporte y confirmar que el botón ahora abre la imagen real.
-
----
-> [!IMPORTANT]
-> Si estás probando desde un **celular físico**, asegúrate de que el `BASE_URL` en `SyncManager.java` apunte a la **IP de tu computadora** y no a `redcicla.onrender.com`.
+1.  **Registro Offline:** Seleccionar fotos, presionar "Guardar Offline" y **cerrar la app completamente**.
+2.  **Reapertura:** Volver a abrir la app y presionar "Sincronizar".
+3.  **Verificación Servidor:** Comprobar que el registro llega a Render con las fotos visibles.
+4.  **Limpieza:** Usar un explorador de archivos o Logs para verificar que las fotos se eliminan del teléfono tras sincronizar.

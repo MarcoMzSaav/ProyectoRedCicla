@@ -17,6 +17,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.ExecutorService;
@@ -224,7 +226,39 @@ public class SyncManager {
     }
 
     private void marcarComoSincronizados() {
+        // 1. Obtener las rutas de los archivos antes de marcarlos como sincronizados
+        Cursor cursor = dbHelper.getReadableDatabase().rawQuery(
+                "SELECT ruta_img_antes, ruta_img_despues FROM registros_retiro WHERE sincronizado = 0", null);
+
+        if (cursor != null) {
+            while (cursor.moveToNext()) {
+                String pathAntes = cursor.getString(0);
+                String pathDespues = cursor.getString(1);
+
+                // 2. Eliminar físicamente los archivos internos
+                eliminarArchivoFisico(pathAntes);
+                eliminarArchivoFisico(pathDespues);
+            }
+            cursor.close();
+        }
+
+        // 3. Marcar en la base de datos
         dbHelper.getWritableDatabase().execSQL("UPDATE registros_retiro SET sincronizado = 1 WHERE sincronizado = 0");
+    }
+
+    private void eliminarArchivoFisico(String path) {
+        if (path != null && !path.equals("sin_foto") && !path.startsWith("content://")) {
+            try {
+                File file = new File(path);
+                if (file.exists()) {
+                    if (file.delete()) {
+                        Log.d(TAG, "Archivo eliminado: " + path);
+                    }
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error eliminando archivo: " + path, e);
+            }
+        }
     }
 
     private String convertImageToBase64(String uriString) {
@@ -232,8 +266,19 @@ public class SyncManager {
             return "";
         }
         try {
-            Uri uri = Uri.parse(uriString);
-            InputStream inputStream = context.getContentResolver().openInputStream(uri);
+            InputStream inputStream;
+            if (uriString.startsWith("content://") || uriString.startsWith("file://")) {
+                inputStream = context.getContentResolver().openInputStream(Uri.parse(uriString));
+            } else {
+                // Es una ruta física interna (/data/user/0/...)
+                File file = new File(uriString);
+                if (!file.exists()) {
+                    Log.e(TAG, "Archivo no encontrado en ruta: " + uriString);
+                    return "";
+                }
+                inputStream = new FileInputStream(file);
+            }
+
             if (inputStream == null) return "";
 
             // 1. Decodificar a Bitmap
@@ -246,7 +291,7 @@ public class SyncManager {
             ByteArrayOutputStream output = new ByteArrayOutputStream();
             bitmap.compress(Bitmap.CompressFormat.JPEG, 60, output);
             byte[] bytes = output.toByteArray();
-            
+
             Log.d(TAG, "Imagen convertida. Tamaño Base64: " + bytes.length + " bytes");
 
             return Base64.encodeToString(bytes, Base64.NO_WRAP);

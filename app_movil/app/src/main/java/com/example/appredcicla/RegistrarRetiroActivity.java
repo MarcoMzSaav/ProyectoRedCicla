@@ -23,11 +23,16 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 
 public class RegistrarRetiroActivity extends AppCompatActivity {
 
@@ -162,8 +167,19 @@ public class RegistrarRetiroActivity extends AppCompatActivity {
             float kgVidrio = Float.parseFloat(kgStr);
             String fecha = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault()).format(new Date());
 
-            if (dbHelper.guardarPesajeOffline(rutaActivaId, puntoId, kgVidrio, fecha, pathAntes, pathDespues)) {
-                Toast.makeText(this, "¡Guardado!", Toast.LENGTH_SHORT).show();
+            // --- NUEVO: Persistencia física de imágenes ---
+            String pathInternoAntes = "sin_foto";
+            String pathInternoDespues = "sin_foto";
+
+            if (!pathAntes.equals("sin_foto")) {
+                pathInternoAntes = copiarImagenInterna(Uri.parse(pathAntes), "antes");
+            }
+            if (!pathDespues.equals("sin_foto")) {
+                pathInternoDespues = copiarImagenInterna(Uri.parse(pathDespues), "despues");
+            }
+
+            if (dbHelper.guardarPesajeOffline(rutaActivaId, puntoId, kgVidrio, fecha, pathInternoAntes, pathInternoDespues)) {
+                Toast.makeText(this, "¡Guardado Offline!", Toast.LENGTH_SHORT).show();
                 resetForm();
             }
         });
@@ -236,5 +252,31 @@ public class RegistrarRetiroActivity extends AppCompatActivity {
         txtStatusAntes.setTextColor(0xFF999999);
         txtStatusDespues.setText("Sin foto");
         txtStatusDespues.setTextColor(0xFF999999);
+    }
+
+    private String copiarImagenInterna(Uri uri, String prefijo) {
+        try {
+            InputStream in = getContentResolver().openInputStream(uri);
+            if (in == null) return "sin_foto";
+
+            File folder = new File(getFilesDir(), "fotos_pendientes");
+            if (!folder.exists()) folder.mkdirs();
+
+            String nombreArchivo = prefijo + "_" + System.currentTimeMillis() + ".jpg";
+            File destination = new File(folder, nombreArchivo);
+
+            OutputStream out = new FileOutputStream(destination);
+            byte[] buf = new byte[8192];
+            int len;
+            while ((len = in.read(buf)) > 0) {
+                out.write(buf, 0, len);
+            }
+            out.close();
+            in.close();
+
+            return destination.getAbsolutePath();
+        } catch (Exception e) {
+            return "sin_foto";
+        }
     }
 }
