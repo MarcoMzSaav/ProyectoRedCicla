@@ -214,10 +214,22 @@ public class RegistrarRetiroActivity extends AppCompatActivity {
             @Override
             public void onSuccess(JsonObject data) {
                 rutaActivaId = data.get("ruta_activa_id").getAsInt();
-                txtNombreRuta.setText("Ruta: " + data.get("nombre_ruta").getAsString());
-                txtPatenteCamion.setText("Camión: " + data.get("patente_camion").getAsString());
+                String nombreRuta = data.get("nombre_ruta").getAsString();
+                String patente = data.get("patente_camion").getAsString();
+
+                txtNombreRuta.setText("Ruta: " + nombreRuta);
+                txtPatenteCamion.setText("Camión: " + patente);
 
                 JsonArray puntos = data.getAsJsonArray("puntos");
+
+                // Guardar en caché local para modo offline
+                dbHelper.guardarRutaLocal(rutaActivaId, nombreRuta, patente, puntos);
+                getSharedPreferences("RutaOffline", MODE_PRIVATE).edit()
+                        .putInt("id_activa", rutaActivaId)
+                        .putString("nombre", nombreRuta)
+                        .putString("patente", patente)
+                        .apply();
+
                 listaDirecciones.clear();
                 listaIdsPuntos.clear();
                 listaCapacidades.clear();
@@ -237,11 +249,50 @@ public class RegistrarRetiroActivity extends AppCompatActivity {
 
             @Override
             public void onError(String mensaje) {
-                txtNombreRuta.setText("Sin ruta activa asignada");
-                listaDirecciones.clear();
-                spinnerPuntos.setAdapter(null);
+                // Intentar cargar desde caché si no hay internet
+                cargarDatosOffline();
             }
         });
+    }
+
+    private void cargarDatosOffline() {
+        android.content.SharedPreferences prefs = getSharedPreferences("RutaOffline", MODE_PRIVATE);
+        rutaActivaId = prefs.getInt("id_activa", -1);
+
+        if (rutaActivaId != -1) {
+            txtNombreRuta.setText("Ruta: " + prefs.getString("nombre", "") + " (Offline)");
+            txtPatenteCamion.setText("Camión: " + prefs.getString("patente", ""));
+
+            Cursor cursor = dbHelper.obtenerPuntosLocales();
+            listaDirecciones.clear();
+            listaIdsPuntos.clear();
+            listaCapacidades.clear();
+
+            if (cursor != null) {
+                while (cursor.moveToNext()) {
+                    int id = cursor.getInt(cursor.getColumnIndexOrThrow("id"));
+                    String dir = cursor.getString(cursor.getColumnIndexOrThrow("direccion"));
+                    float cap = cursor.getFloat(cursor.getColumnIndexOrThrow("capacidad"));
+
+                    listaDirecciones.add(dir + " (" + cap + " kg)");
+                    listaIdsPuntos.add(id);
+                    listaCapacidades.add((double)cap);
+                }
+                cursor.close();
+            }
+
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+                    android.R.layout.simple_spinner_item, listaDirecciones);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            spinnerPuntos.setAdapter(adapter);
+
+            Toast.makeText(this, "Modo Offline: Usando última ruta conocida", Toast.LENGTH_LONG).show();
+        } else {
+            txtNombreRuta.setText("Sin ruta activa asignada");
+            listaDirecciones.clear();
+            spinnerPuntos.setAdapter(null);
+            Toast.makeText(this, "Sin conexión y sin datos en caché", Toast.LENGTH_LONG).show();
+        }
     }
 
     private void resetForm() {

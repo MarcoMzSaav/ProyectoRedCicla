@@ -4,6 +4,7 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.Toast;
@@ -12,6 +13,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
+import com.example.appredcicla.database.ConexionSQLite;
 import com.example.appredcicla.network.SyncManager;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -50,6 +52,7 @@ public class MapaActivity extends AppCompatActivity
 
     private GoogleMap mMap;
     private SyncManager syncManager;
+    private ConexionSQLite dbHelper;
     private FusedLocationProviderClient fusedLocationClient;
 
     private final List<LatLng> listaPuntosRuta = new ArrayList<>();
@@ -63,6 +66,7 @@ public class MapaActivity extends AppCompatActivity
         setContentView(R.layout.activity_mapa);
 
         syncManager = new SyncManager(this);
+        dbHelper = new ConexionSQLite(this);
 
         fusedLocationClient =
                 LocationServices.getFusedLocationProviderClient(this);
@@ -300,16 +304,46 @@ public class MapaActivity extends AppCompatActivity
 
                     @Override
                     public void onError(String mensaje) {
-                        Toast.makeText(
-                                MapaActivity.this,
-                                "Error: " + mensaje,
-                                Toast.LENGTH_SHORT
-                        ).show();
-
-                        ajustarCamara();
+                        cargarPuntosOffline();
                     }
                 }
         );
+    }
+
+    private void cargarPuntosOffline() {
+        if (mMap == null) return;
+
+        listaPuntosRuta.clear();
+        mMap.clear();
+
+        Cursor cursor = dbHelper.obtenerPuntosLocales();
+        boolean hayPuntos = false;
+
+        if (cursor != null) {
+            while (cursor.moveToNext()) {
+                double lat = cursor.getDouble(cursor.getColumnIndexOrThrow("latitud"));
+                double lng = cursor.getDouble(cursor.getColumnIndexOrThrow("longitud"));
+                String dir = cursor.getString(cursor.getColumnIndexOrThrow("direccion"));
+
+                if (lat != 0 && lng != 0) {
+                    LatLng pos = new LatLng(lat, lng);
+                    listaPuntosRuta.add(pos);
+                    mMap.addMarker(new MarkerOptions()
+                            .position(pos)
+                            .title(dir)
+                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE)));
+                    hayPuntos = true;
+                }
+            }
+            cursor.close();
+        }
+
+        if (hayPuntos) {
+            Toast.makeText(this, "Mostrando ruta desde memoria local (Offline)", Toast.LENGTH_LONG).show();
+            ajustarCamara();
+        } else {
+            Toast.makeText(this, "Sin conexión y sin datos en el mapa", Toast.LENGTH_LONG).show();
+        }
     }
 
     @Override
