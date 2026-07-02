@@ -73,11 +73,33 @@ def dashboard():
         conexion = sqlite3.connect(DB_PATH)
         cursor = conexion.cursor()
         cursor.execute('''
-            SELECT r.punto_id, p.direccion, r.fecha_hora, r.cantidad_retirada, 0.0, r.estado
-            FROM registros_retiro r
-            JOIN puntos_reciclaje p ON r.punto_id = p.id
-            ORDER BY r.id DESC
-        ''')
+    SELECT
+        r.punto_id,
+        p.direccion,
+        r.fecha_hora,
+        r.cantidad_retirada,
+        ra.pesaje_final,
+
+        CASE
+            WHEN ra.pesaje_final IS NOT NULL THEN
+                ra.pesaje_final - (
+                    SELECT COALESCE(SUM(r2.cantidad_retirada), 0)
+                    FROM registros_retiro r2
+                    WHERE r2.ruta_activa_id = r.ruta_activa_id
+                )
+            ELSE NULL
+        END AS diferencia,
+
+        r.estado
+
+    FROM registros_retiro r
+    JOIN puntos_reciclaje p
+        ON r.punto_id = p.id
+    LEFT JOIN rutas_activas ra
+        ON r.ruta_activa_id = ra.id
+
+    ORDER BY r.id DESC
+''')
         retiros_db = cursor.fetchall()
     except Exception as e:
         retiros_db = []
