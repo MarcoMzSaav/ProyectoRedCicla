@@ -162,6 +162,62 @@ public class SyncManager {
         });
     }
 
+    public void finalizarRuta(
+            int rutaActivaId,
+            double pesajeFinal,
+            RouteCallback callback
+    ) {
+        executor.execute(() -> {
+            try {
+                JsonObject json = new JsonObject();
+                json.addProperty("ruta_activa_id", rutaActivaId);
+                json.addProperty("pesaje_final", pesajeFinal);
+
+                RequestBody body = RequestBody.create(
+                        gson.toJson(json),
+                        MediaType.parse("application/json; charset=utf-8")
+                );
+
+                Request request = new Request.Builder()
+                        .url(BASE_URL + "/api/finalizar_ruta")
+                        .post(body)
+                        .build();
+
+                try (Response response = client.newCall(request).execute()) {
+                    ResponseBody responseBody = response.body();
+
+                    String responseData = responseBody != null
+                            ? responseBody.string()
+                            : "{}";
+
+                    JsonObject responseJson =
+                            gson.fromJson(responseData, JsonObject.class);
+
+                    new Handler(Looper.getMainLooper()).post(() -> {
+                        if (response.isSuccessful() && responseJson != null) {
+                            callback.onSuccess(responseJson);
+                        } else {
+                            String mensaje =
+                                    responseJson != null
+                                            && responseJson.has("message")
+                                            ? responseJson.get("message").getAsString()
+                                            : "No se pudo finalizar la ruta";
+
+                            callback.onError(mensaje);
+                        }
+                    });
+                }
+
+            } catch (Exception e) {
+                Log.e(TAG, "Error finalizando ruta", e);
+
+                new Handler(Looper.getMainLooper()).post(() ->
+                        callback.onError("Error de conexión")
+                );
+            }
+        });
+    }
+
     public void obtenerRutaActiva(int usuarioId, RouteCallback callback) {
         executor.execute(() -> {
             try {

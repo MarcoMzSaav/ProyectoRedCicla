@@ -3,6 +3,8 @@ package com.example.appredcicla;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
+import android.app.AlertDialog;
+import android.text.InputType;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.view.View;
@@ -41,6 +43,7 @@ public class RegistrarRetiroActivity extends AppCompatActivity {
     private Spinner spinnerPuntos;
     private EditText campoKgVidrio;
     private Button botonGuardar, botonSincronizar, btnFotoAntes, btnFotoDespues;
+    private Button botonFinalizarRuta;
     private ImageButton btnReportarProblema;
     
     private ConexionSQLite dbHelper;
@@ -100,6 +103,7 @@ public class RegistrarRetiroActivity extends AppCompatActivity {
         btnFotoDespues = findViewById(R.id.btnFotoDespues);
         txtStatusAntes = findViewById(R.id.txtStatusAntes);
         txtStatusDespues = findViewById(R.id.txtStatusDespues);
+        botonFinalizarRuta = findViewById(R.id.btnFinalizarRuta);
 
         ImageButton btnActualizar = findViewById(R.id.btnActualizarDatos);
         if (btnActualizar != null) {
@@ -124,6 +128,9 @@ public class RegistrarRetiroActivity extends AppCompatActivity {
             pickAntesLauncher.launch(intent);
         });
 
+        botonFinalizarRuta.setOnClickListener(v ->
+                mostrarDialogoFinalizarRuta()
+        );
         btnFotoDespues.setOnClickListener(v -> {
             Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
             pickDespuesLauncher.launch(intent);
@@ -296,6 +303,112 @@ public class RegistrarRetiroActivity extends AppCompatActivity {
         }
     }
 
+    private void mostrarDialogoFinalizarRuta() {
+        if (rutaActivaId == -1) {
+            Toast.makeText(
+                    this,
+                    "No hay una ruta activa para finalizar",
+                    Toast.LENGTH_SHORT
+            ).show();
+            return;
+        }
+
+        EditText inputPeso = new EditText(this);
+        inputPeso.setHint("Ej: 154.0");
+        inputPeso.setInputType(
+                InputType.TYPE_CLASS_NUMBER
+                        | InputType.TYPE_NUMBER_FLAG_DECIMAL
+        );
+
+        int padding = (int) (20 * getResources()
+                .getDisplayMetrics().density);
+
+        inputPeso.setPadding(
+                padding,
+                padding,
+                padding,
+                padding
+        );
+
+        AlertDialog dialogo = new AlertDialog.Builder(this)
+                .setTitle("Finalizar ruta")
+                .setMessage(
+                        "Ingresa el peso final registrado en la balanza del acopio."
+                )
+                .setView(inputPeso)
+                .setNegativeButton("Cancelar", null)
+                .setPositiveButton("Finalizar", null)
+                .create();
+
+        dialogo.setOnShowListener(ignorado -> {
+            dialogo.getButton(AlertDialog.BUTTON_POSITIVE)
+                    .setOnClickListener(v -> {
+
+                        String pesoTexto =
+                                inputPeso.getText().toString().trim();
+
+                        if (pesoTexto.isEmpty()) {
+                            inputPeso.setError("Ingresa el peso final");
+                            return;
+                        }
+
+                        double pesajeFinal;
+
+                        try {
+                            pesajeFinal = Double.parseDouble(pesoTexto);
+                        } catch (NumberFormatException e) {
+                            inputPeso.setError("El peso no es válido");
+                            return;
+                        }
+
+                        if (pesajeFinal <= 0) {
+                            inputPeso.setError(
+                                    "El peso debe ser mayor a cero"
+                            );
+                            return;
+                        }
+
+                        syncManager.finalizarRuta(
+                                rutaActivaId,
+                                pesajeFinal,
+                                new SyncManager.RouteCallback() {
+                                    @Override
+                                    public void onSuccess(JsonObject data) {
+                                        Toast.makeText(
+                                                RegistrarRetiroActivity.this,
+                                                "Ruta finalizada correctamente",
+                                                Toast.LENGTH_LONG
+                                        ).show();
+
+                                        dialogo.dismiss();
+
+                                        int usuarioId =
+                                                getSharedPreferences(
+                                                        "Sesion",
+                                                        MODE_PRIVATE
+                                                ).getInt(
+                                                        "usuario_id",
+                                                        -1
+                                                );
+
+                                        cargarDatosRuta(usuarioId);
+                                    }
+
+                                    @Override
+                                    public void onError(String mensaje) {
+                                        Toast.makeText(
+                                                RegistrarRetiroActivity.this,
+                                                mensaje,
+                                                Toast.LENGTH_LONG
+                                        ).show();
+                                    }
+                                }
+                        );
+                    });
+        });
+
+        dialogo.show();
+    }
     private void resetForm() {
         campoKgVidrio.setText("");
         pathAntes = "sin_foto";

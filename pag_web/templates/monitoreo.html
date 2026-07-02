@@ -68,13 +68,25 @@
                         <span class="fw-bold"><i class="bi bi-box-arrow-right text-success"></i> {{ viaje.inicio[-5:] }}</span>
                     </div>
                     <div class="col-6">
-                        <small class="text-muted d-block">Hora Llegada</small>
-                        {% if viaje.fin %}
-                            <span class="fw-bold"><i class="bi bi-box-arrow-in-left text-danger"></i> {{ viaje.fin[-5:] }}</span>
-                        {% else %}
-                            <span class="text-muted fst-italic">En curso...</span>
+                    <small class="text-muted d-block">Hora Llegada</small>
+
+                    {% if viaje.fin %}
+                        <span class="fw-bold d-block">
+                            <i class="bi bi-box-arrow-in-left text-danger"></i>
+                            {{ viaje.fin[-5:] }}
+                        </span>
+
+                        {% if viaje.pesaje_final is not none %}
+                            <small class="text-muted d-block mt-1">
+                                Peso balanza:
+                                <strong>{{ viaje.pesaje_final }} kg</strong>
+                            </small>
                         {% endif %}
-                    </div>
+
+                    {% else %}
+                        <span class="text-muted fst-italic">En curso...</span>
+                    {% endif %}
+                </div>
                 </div>
             </div>
         </div>

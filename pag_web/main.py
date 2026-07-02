@@ -524,7 +524,8 @@ def monitoreo_rutas():
             r.nombre AS ruta_nombre, 
             ra.fecha_inicio, 
             ra.fecha_fin, 
-            ra.ruta_id
+            ra.ruta_id,
+            ra.pesaje_final
         FROM rutas_activas ra
         LEFT JOIN camiones c ON ra.camion_id = c.id
         LEFT JOIN empleados cond ON ra.conductor_id = cond.id
@@ -579,7 +580,8 @@ def monitoreo_rutas():
             "porcentaje": porcentaje,
             "puntos_completados": puntos_completados,
             "total_puntos": total_puntos,
-            "detalle_puntos": detalle_puntos
+            "detalle_puntos": detalle_puntos,
+            "pesaje_final": v[8]
         })
 
     conexion.close()
@@ -967,6 +969,124 @@ def sincronizar_datos():
 
 def abrir_navegador():
     webbrowser.open_new("http://127.0.0.1:8000/")
+
+@app.route('/api/finalizar_ruta', methods=['POST'])
+def api_finalizar_ruta():
+    conexion = None
+
+    try:
+        datos = request.get_json(silent=True) or {}
+
+        ruta_activa_id = datos.get('ruta_activa_id')
+        pesaje_final = datos.get('pesaje_final')
+
+        if ruta_activa_id is None or pesaje_final is None:
+            return jsonify({
+                "status": "error",
+                "message": "Faltan datos para finalizar la ruta"
+            }), 400
+
+        pesaje_final = float(pesaje_final)
+
+        if pesaje_final <= 0:
+            return jsonify({
+                "status": "error",
+                "message": "El peso final debe ser mayor a cero"
+            }), 400
+
+        conexion = sqlite3.connect(DB_PATH, timeout=10)
+        cursor = conexion.cursor()
+
+        cursor.execute("""
+            SELECT ruta_id, fecha_fin
+            FROM rutas_activas
+            WHERE id = ?
+        """, (int(ruta_activa_id),))
+
+        ruta_activa = cursor.fetchone()
+
+        if not ruta_activa:
+            return jsonify({
+                "status": "error",
+                "message": "La ruta activa no existe"
+            }), 404
+
+        ruta_id, fecha_fin_actual = ruta_activa
+
+        if fecha_fin_actual:
+            return jsonify({
+                "status": "error",
+                "message": "Esta ruta ya fue finalizada"
+            }), 409
+
+        # Revisamos que todos los puntos estén recolectados.
+        cursor.execute("""
+            SELECT COUNT(*)
+            FROM puntos_reciclaje
+            WHERE ruta_id = ?
+              AND estado = 1
+        """, (ruta_id,))
+
+        total_puntos = cursor.fetchone()[0]
+
+        cursor.execute("""
+            SELECT COUNT(DISTINCT punto_id)
+            FROM registros_retiro
+            WHERE ruta_activa_id = ?
+              AND estado = 'Completado'
+        """, (int(ruta_activa_id),))
+
+        puntos_completados = cursor.fetchone()[0]
+
+        if puntos_completados < total_puntos:
+            return jsonify({
+                "status": "error",
+                "message": (
+                    f"Faltan puntos por completar: "
+                    f"{puntos_completados}/{total_puntos}"
+                )
+            }), 409
+
+        fecha_fin = obtener_hora_chile()
+
+        cursor.execute("""
+            UPDATE rutas_activas
+            SET fecha_fin = ?,
+                pesaje_final = ?
+            WHERE id = ?
+        """, (
+            fecha_fin,
+            pesaje_final,
+            int(ruta_activa_id)
+        ))
+
+        conexion.commit()
+
+        return jsonify({
+            "status": "success",
+            "message": "Ruta finalizada correctamente",
+            "fecha_fin": fecha_fin,
+            "pesaje_final": pesaje_final
+        }), 200
+
+    except ValueError:
+        return jsonify({
+            "status": "error",
+            "message": "El peso final no es válido"
+        }), 400
+
+    except Exception as e:
+        if conexion:
+            conexion.rollback()
+
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
+    finally:
+        if conexion:
+            conexion.close()
 
 if __name__ == '__main__':
     os.system('cls' if os.name == 'nt' else 'clear')
