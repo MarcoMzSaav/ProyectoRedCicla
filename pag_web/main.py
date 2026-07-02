@@ -69,40 +69,65 @@ def dashboard():
     if 'usuario_nombre' not in session:
         return redirect(url_for('login'))
 
-    conexion = sqlite3.connect(DB_PATH)
-    cursor = conexion.cursor()
+    conexion = None
 
     try:
-        # Obtenemos una fila por cada ruta que tenga retiros registrados.
+        conexion = sqlite3.connect(DB_PATH)
+        cursor = conexion.cursor()
+
+        # Obtiene la ejecución más reciente de cada ruta.
+        # El conductor se busca primero en rutas_activas y,
+        # si no está ahí, se obtiene desde la tabla rutas.
         cursor.execute('''
             SELECT
                 ra.id,
                 r.nombre,
                 c.patente,
-                COALESCE(cond.nombre_completo, 'Sin asignar'),
+
+                COALESCE(
+                    conductor_activo.nombre_completo,
+                    conductor_ruta.nombre_completo,
+                    'Sin asignar'
+                ) AS conductor,
+
                 ra.fecha_inicio,
                 ra.fecha_fin,
                 ra.pesaje_final,
-                COALESCE(SUM(rr.cantidad_retirada), 0),
-                MAX(rr.id)
-            FROM rutas_activas ra
-            JOIN rutas r
-                ON ra.ruta_id = r.id
+                COALESCE(SUM(rr.cantidad_retirada), 0) AS total_app,
+                MAX(rr.id) AS ultimo_retiro
+
+            FROM rutas r
+
+            JOIN rutas_activas ra
+                ON ra.id = (
+                    SELECT MAX(ra2.id)
+                    FROM rutas_activas ra2
+                    WHERE ra2.ruta_id = r.id
+                )
+
             LEFT JOIN camiones c
                 ON ra.camion_id = c.id
-            LEFT JOIN empleados cond
-                ON ra.conductor_id = cond.id
+
+            LEFT JOIN empleados conductor_activo
+                ON ra.conductor_id = conductor_activo.id
+
+            LEFT JOIN empleados conductor_ruta
+                ON r.conductor_id = conductor_ruta.id
+
             JOIN registros_retiro rr
                 ON rr.ruta_activa_id = ra.id
+
             GROUP BY
                 ra.id,
                 r.nombre,
                 c.patente,
-                cond.nombre_completo,
+                conductor_activo.nombre_completo,
+                conductor_ruta.nombre_completo,
                 ra.fecha_inicio,
                 ra.fecha_fin,
                 ra.pesaje_final
-            ORDER BY MAX(rr.id) DESC
+
+            ORDER BY ultimo_retiro DESC
         ''')
 
         rutas_db = cursor.fetchall()
@@ -110,14 +135,18 @@ def dashboard():
 
         for fila in rutas_db:
             ruta_activa_id = fila[0]
-            total_app = float(fila[7] or 0)
             pesaje_final = fila[6]
+            total_app = float(fila[7] or 0)
 
             diferencia = None
-            if pesaje_final is not None:
-                diferencia = round(float(pesaje_final) - total_app, 1)
 
-            # Retiros individuales pertenecientes a esta ruta.
+            if pesaje_final is not None:
+                diferencia = round(
+                    float(pesaje_final) - total_app,
+                    1
+                )
+
+            # Obtiene los retiros individuales de esta ruta.
             cursor.execute('''
                 SELECT
                     rr.id,
@@ -127,17 +156,23 @@ def dashboard():
                     rr.estado,
                     rr.ruta_img_antes,
                     rr.ruta_img_despues
+
                 FROM registros_retiro rr
+
                 JOIN puntos_reciclaje p
                     ON rr.punto_id = p.id
+
                 WHERE rr.ruta_activa_id = ?
+
                 ORDER BY rr.id DESC
             ''', (ruta_activa_id,))
 
             retiros_db = cursor.fetchall()
 
-            retiros = [
-                {
+            retiros = []
+
+            for retiro in retiros_db:
+                retiros.append({
                     "id": retiro[0],
                     "direccion": retiro[1],
                     "fecha": retiro[2],
@@ -145,14 +180,12 @@ def dashboard():
                     "estado": retiro[4],
                     "foto_antes": retiro[5],
                     "foto_despues": retiro[6]
-                }
-                for retiro in retiros_db
-            ]
+                })
 
             rutas_resumen.append({
                 "id": ruta_activa_id,
                 "nombre": fila[1],
-                "patente": fila[2],
+                "patente": fila[2] if fila[2] else "Sin camión",
                 "conductor": fila[3],
                 "inicio": fila[4],
                 "fin": fila[5],
@@ -163,7 +196,8 @@ def dashboard():
             })
 
         pendientes_pesaje = sum(
-            1 for ruta in rutas_resumen
+            1
+            for ruta in rutas_resumen
             if ruta["pesaje_final"] is None
         )
 
@@ -173,7 +207,8 @@ def dashboard():
         pendientes_pesaje = 0
 
     finally:
-        conexion.close()
+        if conexion:
+            conexion.close()
 
     return render_template(
         'dashboard.html',
@@ -602,85 +637,133 @@ def reportes_terreno():
     return render_template('reportes_terreno.html', reportes=reportes_db)
 @app.route('/monitoreo')
 def monitoreo_rutas():
-    if 'usuario_nombre' not in session: 
+    if 'usuario_nombre' not in session:
         return redirect(url_for('login'))
 
     conexion = sqlite3.connect(DB_PATH)
     cursor = conexion.cursor()
-    
-    # 1. Traemos los datos básicos del camión en ruta
-    # Consulta corregida con LEFT JOIN para mostrar TODA la flota siempre
-    cursor.execute('''
-        SELECT 
-            ra.id, 
-            c.patente, 
-            c.capacidad_carga, 
-            COALESCE(cond.nombre_completo, 'Conductor Asignado') AS conductor,
-            r.nombre AS ruta_nombre, 
-            ra.fecha_inicio, 
-            ra.fecha_fin, 
+
+    cursor.execute("""
+        SELECT
+            ra.id,
+            c.patente,
+            c.capacidad_carga,
+
+            COALESCE(
+                conductor_activo.nombre_completo,
+                conductor_ruta.nombre_completo,
+                'Sin asignar'
+            ) AS conductor,
+
+            r.nombre,
+            ra.fecha_inicio,
+            ra.fecha_fin,
             ra.ruta_id,
             ra.pesaje_final
-        FROM rutas_activas ra
-        LEFT JOIN camiones c ON ra.camion_id = c.id
-        LEFT JOIN empleados cond ON ra.conductor_id = cond.id
-        LEFT JOIN rutas r ON ra.ruta_id = r.id
-        ORDER BY ra.fecha_inicio DESC
-    ''')
-    viajes_db = cursor.fetchall()
 
+        FROM rutas r
+
+        JOIN rutas_activas ra
+            ON ra.id = (
+                SELECT MAX(ra2.id)
+                FROM rutas_activas ra2
+                WHERE ra2.ruta_id = r.id
+            )
+
+        LEFT JOIN camiones c
+            ON ra.camion_id = c.id
+
+        LEFT JOIN empleados conductor_activo
+            ON ra.conductor_id = conductor_activo.id
+
+        LEFT JOIN empleados conductor_ruta
+            ON r.conductor_id = conductor_ruta.id
+
+        ORDER BY ra.fecha_inicio DESC
+    """)
+
+    viajes_db = cursor.fetchall()
     viajes_procesados = []
-    
+
     for v in viajes_db:
         ruta_activa_id = v[0]
         ruta_id = v[7]
-        
-        # 2. Obtenemos los Kilos recolectados hasta el momento
-        cursor.execute("SELECT SUM(cantidad_retirada) FROM registros_retiro WHERE ruta_activa_id = ? AND estado = 'Completado'", (ruta_activa_id,))
+
+        cursor.execute("""
+            SELECT COALESCE(SUM(cantidad_retirada), 0)
+            FROM registros_retiro
+            WHERE ruta_activa_id = ?
+              AND estado = 'Completado'
+        """, (ruta_activa_id,))
+
         recolectado = cursor.fetchone()[0]
-        if recolectado is None: recolectado = 0.0
-        
-        # 3. Obtenemos TODOS los puntos que pertenecen a esta ruta y cruzamos con sus retiros
-        cursor.execute('''
-            SELECT p.id, p.direccion,
-                   (SELECT estado FROM registros_retiro WHERE ruta_activa_id = ? AND punto_id = p.id ORDER BY id DESC LIMIT 1) as estado_retiro
+
+        cursor.execute("""
+            SELECT
+                p.id,
+                p.direccion,
+                (
+                    SELECT rr.estado
+                    FROM registros_retiro rr
+                    WHERE rr.ruta_activa_id = ?
+                      AND rr.punto_id = p.id
+                    ORDER BY rr.id DESC
+                    LIMIT 1
+                )
             FROM puntos_reciclaje p
-            WHERE p.ruta_id = ? AND p.estado = 1
-        ''', (ruta_activa_id, ruta_id))
+            WHERE p.ruta_id = ?
+              AND p.estado = 1
+        """, (
+            ruta_activa_id,
+            ruta_id
+        ))
+
         puntos_db = cursor.fetchall()
-        
+
         detalle_puntos = []
         puntos_completados = 0
-        total_puntos = len(puntos_db)
-        
-        for p in puntos_db:
-            estado_punto = p[2]
+
+        for punto in puntos_db:
+            estado_punto = punto[2]
+
             if estado_punto == 'Completado':
                 puntos_completados += 1
-                
+
             detalle_puntos.append({
-                "direccion": p[1],
+                "direccion": punto[1],
                 "estado": estado_punto
             })
-            
-        # 4. El porcentaje ahora se calcula 100% en base al trabajo realizado (puntos visitados)
-        porcentaje = 0
-        if total_puntos > 0:
-            porcentaje = int((puntos_completados / total_puntos) * 100)
-        
+
+        total_puntos = len(puntos_db)
+
+        porcentaje = (
+            int((puntos_completados / total_puntos) * 100)
+            if total_puntos > 0
+            else 0
+        )
+
         viajes_procesados.append({
-            "id": v[0], "patente": v[1], "capacidad": v[2], "conductor": v[3],
-            "ruta": v[4], "inicio": v[5], "fin": v[6], 
+            "id": v[0],
+            "patente": v[1],
+            "capacidad": v[2],
+            "conductor": v[3],
+            "ruta": v[4],
+            "inicio": v[5],
+            "fin": v[6],
+            "pesaje_final": v[8],
             "recolectado": round(recolectado, 1),
             "porcentaje": porcentaje,
             "puntos_completados": puntos_completados,
             "total_puntos": total_puntos,
-            "detalle_puntos": detalle_puntos,
-            "pesaje_final": v[8]
+            "detalle_puntos": detalle_puntos
         })
 
     conexion.close()
-    return render_template('monitoreo.html', viajes=viajes_procesados)
+
+    return render_template(
+        'monitoreo.html',
+        viajes=viajes_procesados
+    )
 
 # ==========================================
 # 6. GESTIÓN DE RUTAS (NUEVO)
@@ -777,43 +860,115 @@ def asignar_conductor_ruta(id_ruta):
         return redirect(url_for('login'))
 
     nuevo_conductor_id = request.form.get('conductor_id')
-    
+    nuevo_conductor_id = int(nuevo_conductor_id) if nuevo_conductor_id else None
+
+    conexion = None
+
     try:
         conexion = sqlite3.connect(DB_PATH)
         cursor = conexion.cursor()
-        
-        # 1. Obtener conductor anterior para cerrar su sesión si es necesario
-        cursor.execute("SELECT conductor_id FROM rutas WHERE id = ?", (id_ruta,))
-        viejo_conductor = cursor.fetchone()
-        
-        # 2. Actualizar la ruta maestra
-        cursor.execute("UPDATE rutas SET conductor_id = ? WHERE id = ?", (nuevo_conductor_id, id_ruta))
-        
-        # 3. Sincronizar App Móvil
-        fecha_ahora = obtener_hora_chile()
-        
-        # Cerrar ruta activa al conductor anterior (si tenía una pendiente de esta ruta)
-        if viejo_conductor and viejo_conductor[0]:
-            cursor.execute('''
-                UPDATE rutas_activas SET fecha_fin = ? 
-                WHERE conductor_id = ? AND ruta_id = ? AND fecha_fin IS NULL
-            ''', (fecha_ahora, viejo_conductor[0], id_ruta))
 
-        # Abrir ruta activa al nuevo conductor (si se asignó uno)
-        if nuevo_conductor_id:
-            cursor.execute("SELECT id FROM camiones WHERE estado = 1 LIMIT 1")
+        # Actualizar el conductor en la ruta principal.
+        cursor.execute("""
+            UPDATE rutas
+            SET conductor_id = ?
+            WHERE id = ?
+        """, (nuevo_conductor_id, id_ruta))
+
+        fecha_ahora = obtener_hora_chile()
+
+        # Un conductor solo puede tener una ruta activa.
+        if nuevo_conductor_id is not None:
+            cursor.execute("""
+                UPDATE rutas_activas
+                SET fecha_fin = ?
+                WHERE conductor_id = ?
+                  AND ruta_id != ?
+                  AND fecha_fin IS NULL
+            """, (
+                fecha_ahora,
+                nuevo_conductor_id,
+                id_ruta
+            ))
+
+        # Buscar la ejecución activa más reciente de esta ruta.
+        cursor.execute("""
+            SELECT id
+            FROM rutas_activas
+            WHERE ruta_id = ?
+              AND fecha_fin IS NULL
+            ORDER BY id DESC
+            LIMIT 1
+        """, (id_ruta,))
+
+        ruta_activa = cursor.fetchone()
+
+        if ruta_activa:
+            ruta_activa_id = ruta_activa[0]
+
+            # Actualizar la misma ejecución, sin crear otra tarjeta.
+            cursor.execute("""
+                UPDATE rutas_activas
+                SET conductor_id = ?
+                WHERE id = ?
+            """, (
+                nuevo_conductor_id,
+                ruta_activa_id
+            ))
+
+            # Cerrar posibles duplicados anteriores.
+            cursor.execute("""
+                UPDATE rutas_activas
+                SET fecha_fin = ?
+                WHERE ruta_id = ?
+                  AND fecha_fin IS NULL
+                  AND id != ?
+            """, (
+                fecha_ahora,
+                id_ruta,
+                ruta_activa_id
+            ))
+
+        elif nuevo_conductor_id is not None:
+            cursor.execute("""
+                SELECT id
+                FROM camiones
+                WHERE estado = 1
+                ORDER BY id
+                LIMIT 1
+            """)
+
             camion = cursor.fetchone()
-            camion_id = camion[0] if camion else 1
-            
-            cursor.execute('''
-                INSERT INTO rutas_activas (ruta_id, camion_id, conductor_id, fecha_inicio)
+
+            if not camion:
+                raise ValueError("No existe un camión operativo disponible")
+
+            cursor.execute("""
+                INSERT INTO rutas_activas (
+                    ruta_id,
+                    camion_id,
+                    conductor_id,
+                    fecha_inicio
+                )
                 VALUES (?, ?, ?, ?)
-            ''', (id_ruta, camion_id, nuevo_conductor_id, fecha_ahora))
+            """, (
+                id_ruta,
+                camion[0],
+                nuevo_conductor_id,
+                fecha_ahora
+            ))
 
         conexion.commit()
-        conexion.close()
+
     except Exception as e:
+        if conexion:
+            conexion.rollback()
+
         print(f"Error al asignar conductor: {e}")
+
+    finally:
+        if conexion:
+            conexion.close()
 
     return redirect(url_for('gestionar_rutas'))
 
@@ -931,7 +1086,9 @@ def api_ruta_activa(usuario_id):
             FROM rutas_activas ra
             JOIN rutas r ON ra.ruta_id = r.id
             JOIN camiones c ON ra.camion_id = c.id
-            WHERE (ra.conductor_id = ? OR ra.ayudante_id = ?) AND ra.fecha_fin IS NULL
+            WHERE (ra.conductor_id = ? OR ra.ayudante_id = ?)
+            AND ra.fecha_fin IS NULL
+            ORDER BY ra.id DESC
             LIMIT 1
         ''', (usuario_id, usuario_id))
         
