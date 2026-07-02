@@ -2,8 +2,10 @@ package com.example.appredcicla.network;
 
 import android.content.Context;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Base64;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -12,7 +14,9 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -113,8 +117,13 @@ public class SyncManager {
                     obj.addProperty("punto_id", cursor.getInt(cursor.getColumnIndexOrThrow("punto_id")));
                     obj.addProperty("cantidad_retirada", cursor.getFloat(cursor.getColumnIndexOrThrow("cantidad_retirada")));
                     obj.addProperty("fecha_hora", cursor.getString(cursor.getColumnIndexOrThrow("fecha_hora")));
-                    obj.addProperty("ruta_img_antes", cursor.getString(cursor.getColumnIndexOrThrow("ruta_img_antes")));
-                    obj.addProperty("ruta_img_despues", cursor.getString(cursor.getColumnIndexOrThrow("ruta_img_despues")));
+
+                    String uriAntes = cursor.getString(cursor.getColumnIndexOrThrow("ruta_img_antes"));
+                    String uriDespues = cursor.getString(cursor.getColumnIndexOrThrow("ruta_img_despues"));
+
+                    obj.addProperty("ruta_img_antes", convertImageToBase64(uriAntes));
+                    obj.addProperty("ruta_img_despues", convertImageToBase64(uriDespues));
+
                     jsonArray.add(obj);
                 }
                 cursor.close();
@@ -214,6 +223,30 @@ public class SyncManager {
 
     private void marcarComoSincronizados() {
         dbHelper.getWritableDatabase().execSQL("UPDATE registros_retiro SET sincronizado = 1 WHERE sincronizado = 0");
+    }
+
+    private String convertImageToBase64(String uriString) {
+        if (uriString == null || uriString.isEmpty() || uriString.equals("sin_foto")) {
+            return "";
+        }
+        try {
+            Uri uri = Uri.parse(uriString);
+            InputStream inputStream = context.getContentResolver().openInputStream(uri);
+            if (inputStream == null) return "";
+
+            byte[] bytes;
+            byte[] buffer = new byte[8192];
+            int bytesRead;
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                output.write(buffer, 0, bytesRead);
+            }
+            bytes = output.toByteArray();
+            return Base64.encodeToString(bytes, Base64.NO_WRAP);
+        } catch (Exception e) {
+            Log.e(TAG, "Error converting image to Base64", e);
+            return "";
+        }
     }
 
     private void mostrarToast(String mensaje) {

@@ -1,6 +1,8 @@
 import os
 import sqlite3
 import webbrowser
+import base64
+import uuid
 from datetime import datetime
 from threading import Timer
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -886,7 +888,35 @@ def sincronizar_datos():
         conexion = sqlite3.connect(DB_PATH, timeout=10)
         cursor = conexion.cursor()
 
+        fotos_dir = os.path.join(BASE_DIR, 'static', 'images', 'fotos')
+        if not os.path.exists(fotos_dir):
+            os.makedirs(fotos_dir)
+
         for registro in datos_recibidos:
+            # Procesar imágenes Base64
+            img_antes_nombre = ""
+            img_despues_nombre = ""
+
+            if registro.get('ruta_img_antes'):
+                img_antes_nombre = f"retiro_{uuid.uuid4().hex[:8]}_antes.jpg"
+                ruta_completa = os.path.join(fotos_dir, img_antes_nombre)
+                try:
+                    with open(ruta_completa, "wb") as f:
+                        f.write(base64.b64decode(registro['ruta_img_antes']))
+                except Exception as e:
+                    print(f"Error decodificando imagen antes: {e}")
+                    img_antes_nombre = ""
+
+            if registro.get('ruta_img_despues'):
+                img_despues_nombre = f"retiro_{uuid.uuid4().hex[:8]}_despues.jpg"
+                ruta_completa = os.path.join(fotos_dir, img_despues_nombre)
+                try:
+                    with open(ruta_completa, "wb") as f:
+                        f.write(base64.b64decode(registro['ruta_img_despues']))
+                except Exception as e:
+                    print(f"Error decodificando imagen despues: {e}")
+                    img_despues_nombre = ""
+
             cursor.execute('''
                 INSERT INTO registros_retiro (ruta_activa_id, punto_id, fecha_hora, cantidad_retirada, ruta_img_antes, ruta_img_despues, estado)
                 VALUES (?, ?, ?, ?, ?, ?, 'Pendiente')
@@ -895,8 +925,8 @@ def sincronizar_datos():
                 int(registro['punto_id']),
                 registro['fecha_hora'],
                 float(registro['cantidad_retirada']),
-                registro.get('ruta_img_antes', ''),
-                registro.get('ruta_img_despues', '')
+                img_antes_nombre,
+                img_despues_nombre
             ))
 
         conexion.commit()
